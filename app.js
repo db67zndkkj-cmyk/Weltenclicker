@@ -11,8 +11,8 @@ const I18N = {
     usernameHint:"Erlaubt: Buchstaben, Zahlen und _ . Dein Name bleibt in diesem Browser gespeichert.",
     chooseMascot:"DEIN BEGLEITER", petHint:"Klick mich zum Streicheln",
     upgrades:"UPGRADES", production:"Deine Produktion", energy:"Energie", resetEyebrow:"UNIVERSUMS-RESET",
-    resetTitle:"Donation → zurück auf 0", resetDesc:"Eine bestätigte Donation setzt den globalen Zähler, Energie und Upgrades aller ungeschützten Spieler zurück. Ein aktives Schild schützt deinen Fortschritt.",
-    donationPending:"Donation-Zahlung wird eingerichtet", donationReady:"TEST-SPENDE & UNIVERSUM RESETTEN",
+    resetTitle:"Support-Reset → zurück auf 0", resetDesc:"Ein bestätigter Support-Reset setzt den globalen Zähler, Energie und Upgrades aller ungeschützten Spieler zurück. Ein aktives Schild schützt deinen Fortschritt.",
+    donationPending:"Donation-Zahlung wird eingerichtet", donationReady:"TEST SUPPORT-RESET",
     donationSecure:"Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst.",
     shieldEyebrow:"RESET-SCHUTZ", shieldTitle:"15-Minuten Schild", shieldInactive:"Kein aktives Schild", shieldActive:"Schild aktiv",
     shieldDesc:"Für 2 € schützt das Schild 15 Minuten lang deine Energie und Upgrades vor einem Universums-Reset.",
@@ -48,8 +48,8 @@ const I18N = {
     usernameHint:"Allowed: letters, numbers and _ . Your identity is stored in this browser.",
     chooseMascot:"YOUR COMPANION", petHint:"Click to pet me",
     upgrades:"UPGRADES", production:"Your production", energy:"Energy", resetEyebrow:"UNIVERSE RESET",
-    resetTitle:"Donation → reset to 0", resetDesc:"A confirmed donation resets the global counter, energy and upgrades for every unprotected player. An active shield protects your progress.",
-    donationPending:"Donation payments are being connected", donationReady:"TEST DONATION & RESET UNIVERSE",
+    resetTitle:"Support reset → reset to 0", resetDesc:"A confirmed support reset resets the global counter, energy and upgrades for every unprotected player. An active shield protects your progress.",
+    donationPending:"Support reset payment is being connected", donationReady:"TEST SUPPORT RESET",
     donationSecure:"The reset only happens server-side after a confirmed payment.",
     shieldEyebrow:"RESET PROTECTION", shieldTitle:"15-minute shield", shieldInactive:"No active shield", shieldActive:"Shield active",
     shieldDesc:"For €2 the shield protects your energy and upgrades from a universe reset for 15 minutes.",
@@ -78,7 +78,9 @@ const I18N = {
   }
 };
 
-let lang=localStorage.getItem("wc_lang")||((navigator.language||"").toLowerCase().startsWith("en")?"en":"de");
+let storageConsent=localStorage.getItem("wc_storage_consent");
+function activeStore(){return storageConsent==="preferences"?localStorage:sessionStorage}
+let lang=activeStore().getItem("wc_lang")||localStorage.getItem("wc_lang")||((navigator.language||"").toLowerCase().startsWith("en")?"en":"de");
 let streamerMode=new URLSearchParams(location.search).get("stream")==="1";
 let recentClicks=[];
 let leaderboardTimer=null;
@@ -103,7 +105,7 @@ function makeSessionId(){
 }
 
 const state={
-  sessionId:localStorage.getItem("wc_session_id")||makeSessionId(),
+  sessionId:activeStore().getItem("wc_session_id")||localStorage.getItem("wc_session_id")||makeSessionId(),
   globalCount:0,personalWorlds:0,energy:0,sessionWorlds:0,
   upgrades:{hands:0,portal:0,reactor:0,multiverse:0},
   clickPower:1,username:null,mascotId:"orbix",
@@ -112,7 +114,7 @@ const state={
   leaderboard:[],
   pendingClicks:0,sendingClicks:0,online:false,ready:false,flushTimer:null,retryTimer:null
 };
-localStorage.setItem("wc_session_id",state.sessionId);
+activeStore().setItem("wc_session_id",state.sessionId);
 
 function t(key){return(I18N[lang]&&I18N[lang][key])||key}
 function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
@@ -288,16 +290,27 @@ function initRealtime(){
   }).subscribe()
 }
 
+let pendingPurchaseUrl=null;
+function setPurchaseChecks(){$("purchaseProceed").disabled=!($("purchaseAge").checked&&$("purchaseTerms").checked&&$("purchaseEarly").checked)}
+function openPurchase(kind){pendingPurchaseUrl=kind==="shield"?CONFIG.shieldUrl:CONFIG.donationUrl;if(!pendingPurchaseUrl)return;const de=lang==="de";$("purchaseTitle").textContent=kind==="shield"?(de?"15-Minuten Reset-Schild":"15-minute reset shield"):(de?"Universums Support-Reset":"Universe support reset");$("purchaseDescription").textContent=kind==="shield"?(de?"Schützt Energie und Upgrades des angegebenen Benutzernamens 15 Minuten. Weitere Käufe verlängern um 15 Minuten.":"Protects the entered username's energy and upgrades for 15 minutes. Extra purchases add 15 minutes."):(de?"Löst nach bestätigter Zahlung einen globalen Reset aus. Betrag 1,00–100,00 €. Keine gemeinnützige Spende.":"Triggers one global reset after confirmed payment. Amount €1.00–€100.00. Not a charitable donation.");$("purchasePrice").innerHTML=kind==="shield"?"<strong>2,00 €</strong><span>Gesamtpreis / total price</span>":"<strong>1,00–100,00 €</strong><span>Auswahl im Stripe-Checkout</span>";["purchaseAge","purchaseTerms","purchaseEarly"].forEach(id=>$(id).checked=false);setPurchaseChecks();$("purchaseModal").hidden=false;document.body.classList.add("modal-open");$("purchaseClose").focus()}
+function closePurchase(){$("purchaseModal").hidden=true;document.body.classList.remove("modal-open");pendingPurchaseUrl=null}
+function initStorageSettings(){$("storageBanner").hidden=Boolean(storageConsent)}
+function setStorageConsent(choice){const sid=state.sessionId,l=lang;storageConsent=choice;localStorage.setItem("wc_storage_consent",choice);sessionStorage.setItem("wc_session_id",sid);sessionStorage.setItem("wc_lang",l);if(choice==="preferences"){localStorage.setItem("wc_session_id",sid);localStorage.setItem("wc_lang",l)}else{localStorage.removeItem("wc_session_id");localStorage.removeItem("wc_lang")}$("storageBanner").hidden=true}
+async function deleteProfile(){const de=lang==="de";if(!confirm(de?"Profil wirklich löschen? Öffentliche Profil- und Ranglistendaten werden entfernt. Zahlungs-/Sicherheitsnachweise können anonymisiert fortbestehen.":"Delete profile? Public profile and leaderboard data will be removed. Payment/security records may remain anonymised."))return;try{await gameApi("delete_profile");localStorage.removeItem("wc_session_id");sessionStorage.removeItem("wc_session_id");localStorage.removeItem("wc_lang");sessionStorage.removeItem("wc_lang");location.reload()}catch(err){console.error(err);alert(de?"Löschen fehlgeschlagen.":"Deletion failed.")}}
 $("worldButton").addEventListener("click",createWorld);$("mainClickButton").addEventListener("click",createWorld);
 $("saveUsername").addEventListener("click",saveUsername);$("usernameInput").addEventListener("keydown",function(e){if(e.key==="Enter")saveUsername()});
-$("langToggle").addEventListener("click",function(){lang=lang==="de"?"en":"de";localStorage.setItem("wc_lang",lang);applyLanguage()});
-$("streamToggle").addEventListener("click",function(){streamerMode=!streamerMode;document.body.classList.toggle("streamer-mode",streamerMode);applyLanguage()});
+$("langToggle").addEventListener("click",function(){lang=lang==="de"?"en":"de";activeStore().setItem("wc_lang",lang);applyLanguage()});
+$("streamToggle").addEventListener("click",function(){streamerMode=!streamerMode;initStorageSettings();
+document.body.classList.toggle("streamer-mode",streamerMode);applyLanguage()});
 $("copyOverlay").addEventListener("click",async function(){const url=$("overlayLink").href;try{await navigator.clipboard.writeText(url);$("copyOverlay").textContent=t("copied");setTimeout(function(){$("copyOverlay").textContent=t("copyUrl")},1200)}catch(e){window.prompt("OBS URL",url)}});
-$("donationButton").addEventListener("click",function(){if(CONFIG.donationUrl)location.href=CONFIG.donationUrl});
-$("shieldButton").addEventListener("click",async function(){if(!state.username||!CONFIG.shieldUrl)return;try{await navigator.clipboard.writeText(state.username);$("shieldHint").textContent=t("shieldCopied")}catch(e){}setTimeout(function(){location.href=CONFIG.shieldUrl},180)});
+$("donationButton").addEventListener("click",function(){openPurchase("reset")});
+$("shieldButton").addEventListener("click",async function(){if(!state.username||!CONFIG.shieldUrl)return;try{await navigator.clipboard.writeText(state.username);$("shieldHint").textContent=t("shieldCopied")}catch(e){}openPurchase("shield")});
 $("mascotPet").addEventListener("click",petMascot);
 document.querySelectorAll("[data-mascot]").forEach(function(btn){btn.addEventListener("click",function(){setMascot(btn.dataset.mascot)})});
-document.addEventListener("keydown",function(e){if(e.code==="Space"&&e.target===document.body){e.preventDefault();createWorld()}});
+$("deleteProfileButton").addEventListener("click",deleteProfile);
+["purchaseAge","purchaseTerms","purchaseEarly"].forEach(id=>$(id).addEventListener("change",setPurchaseChecks));
+$("purchaseClose").addEventListener("click",closePurchase);$("purchaseCancel").addEventListener("click",closePurchase);document.querySelectorAll("[data-close-purchase]").forEach(el=>el.addEventListener("click",closePurchase));$("purchaseProceed").addEventListener("click",function(){if(pendingPurchaseUrl&&!$("purchaseProceed").disabled)location.href=pendingPurchaseUrl});$("storageNecessary").addEventListener("click",()=>setStorageConsent("necessary"));$("storagePreferences").addEventListener("click",()=>setStorageConsent("preferences"));$("privacySettingsButton").addEventListener("click",()=>{$("storageBanner").hidden=false});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!$("purchaseModal").hidden)closePurchase();if(e.code==="Space"&&e.target===document.body){e.preventDefault();createWorld()}});
 window.addEventListener("beforeunload",function(){try{if(realtimeChannel&&supabaseClient)supabaseClient.removeChannel(realtimeChannel)}catch(e){}});
 
 document.body.classList.toggle("streamer-mode",streamerMode);

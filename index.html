@@ -5,17 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Weltenclicker</title>
   <meta name="description" content="Global community clicker">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.0"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Zum Hauptinhalt springen / Skip to content</a>
   <div class="stars stars-a"></div>
   <div class="stars stars-b"></div>
 
-  <main class="app">
+  <main class="app" id="mainContent">
     <header class="topbar glass">
       <div>
         <p class="eyebrow">GLOBAL COMMUNITY CLICKER</p>
@@ -30,7 +28,7 @@
         </div>
       </div>
     </header>
-
+    <div class="test-legal-banner" role="status"><strong>TESTBETRIEB</strong><span>Stripe läuft ausschließlich im Testmodus. Keine echten Abbuchungen. Pflichtangaben des Betreibers müssen vor Echtgeld-Start vervollständigt werden.</span></div>
     <section class="hero-grid">
       <section class="counter-card glass">
         <div class="reset-strip">
@@ -88,6 +86,7 @@
               <button class="mascot-choice" data-mascot="mossling" type="button"><span>🍃</span><b>Mossling</b></button>
             </div>
           </div>
+          <button id="deleteProfileButton" class="danger-link-button" type="button">Profil & öffentliche Ranglistendaten löschen</button>
         </section>
 
         <section class="glass side-card">
@@ -105,13 +104,14 @@
           <div class="section-head">
             <div>
               <p class="eyebrow" data-i18n="resetEyebrow">UNIVERSUMS-RESET</p>
-              <h2 data-i18n="resetTitle">Donation → zurück auf 0</h2>
+              <h2 data-i18n="resetTitle">Support-Reset → zurück auf 0</h2>
             </div>
             <span class="danger-chip">∞</span>
           </div>
-          <p class="hint" data-i18n="resetDesc">Eine bestätigte Donation setzt den globalen Zähler auf 0 und löscht Energie sowie Upgrades aller ungeschützten Spieler. Ein aktives Schild schützt deinen Fortschritt.</p>
-          <button id="donationButton" class="reset-btn" disabled data-i18n="donationPending">Donation-Zahlung wird eingerichtet</button>
-          <p id="donationHint" class="tiny" data-i18n="donationSecure">Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst.</p>
+          <p class="hint" data-i18n="resetDesc">Ein bestätigter Support-Reset setzt den globalen Zähler auf 0 und löscht Energie sowie Upgrades aller ungeschützten Spieler. Ein aktives Schild schützt deinen Fortschritt.</p>
+          <div class="price-note"><strong>1,00–100,00 €</strong><span>frei wählbarer Gesamtpreis im Stripe-Testcheckout</span></div>
+          <button id="donationButton" class="reset-btn" disabled data-i18n="donationPending">Support-Reset wird eingerichtet</button>
+          <p id="donationHint" class="tiny" data-i18n="donationSecure">Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst. Kein gemeinnütziger oder steuerlich absetzbarer Spendenzweck.</p>
         </section>
 
         <section class="glass side-card shield-card">
@@ -124,6 +124,7 @@
           </div>
           <p id="shieldStatus" class="shield-status" data-i18n="shieldInactive">Kein aktives Schild</p>
           <p class="hint" data-i18n="shieldDesc">Für 2 € schützt das Schild 15 Minuten lang deine Energie und Upgrades vor einem Universums-Reset.</p>
+          <div class="price-note"><strong>2,00 €</strong><span>Gesamtpreis für 15 Minuten Schutz</span></div>
           <button id="shieldButton" class="shield-btn" type="button" disabled data-i18n="shieldButton">TEST-SCHILD FÜR 2 € KAUFEN</button>
           <p id="shieldHint" class="tiny" data-i18n="shieldUsernameHint">Du brauchst zuerst einen Benutzernamen. Beim Stripe-Test bitte exakt denselben Namen eingeben.</p>
         </section>
@@ -157,10 +158,7 @@
       <div class="glass info-card"><p class="eyebrow" data-i18n="fairPlay">FAIR PLAY</p><h3 data-i18n="fairTitle">Serverseitig geprüft</h3><p data-i18n="fairText">Klickstärke, Energie, Upgrades und Resets werden nicht vom Browser bestimmt.</p></div>
     </section>
 
-    <footer>
-      <span>Weltenclicker • Community Project</span>
-      <span id="footerState" data-i18n="preparing">Serververbindung wird vorbereitet</span>
-    </footer>
+    <footer class="site-footer"><div><strong>Weltenclicker</strong><span id="footerState" data-i18n="preparing">Serververbindung wird vorbereitet</span></div><nav class="legal-links" aria-label="Rechtliche Informationen"><a href="/impressum.html">Impressum</a><a href="/datenschutz.html">Datenschutz</a><a href="/agb.html">AGB</a><a href="/widerruf.html">Widerruf</a><a href="/barrierefreiheit.html">Barrierefreiheit</a><button id="privacySettingsButton" type="button">Speicher-Einstellungen</button></nav></footer>
   </main>
 
   <aside id="mascotCompanion" class="mascot-companion" aria-label="Weltenclicker mascot">
@@ -188,6 +186,8 @@
     <div class="event-subtitle" id="gameEventSubtitle"></div>
   </div>
 
+  <div id="purchaseModal" class="purchase-modal" hidden><div class="purchase-backdrop" data-close-purchase></div><section class="purchase-dialog glass" role="dialog" aria-modal="true" aria-labelledby="purchaseTitle"><button id="purchaseClose" class="modal-close" type="button" aria-label="Schließen">×</button><p class="eyebrow">TEST CHECKOUT</p><h2 id="purchaseTitle">Zahlung prüfen</h2><p id="purchaseDescription" class="purchase-description"></p><div id="purchasePrice" class="purchase-price"></div><p class="purchase-provider">Zahlungsabwicklung über Stripe. Kartendaten werden nicht von Weltenclicker gespeichert.</p><label class="legal-check"><input id="purchaseAge" type="checkbox"> <span>Ich bin mindestens 18 Jahre alt und darf diesen Vertrag abschließen.</span></label><label class="legal-check"><input id="purchaseTerms" type="checkbox"> <span>Ich akzeptiere die <a href="/agb.html" target="_blank">AGB</a> und habe <a href="/datenschutz.html" target="_blank">Datenschutz</a> sowie <a href="/widerruf.html" target="_blank">Widerrufsbelehrung</a> zur Kenntnis genommen.</span></label><label class="legal-check"><input id="purchaseEarly" type="checkbox"> <span>Ich verlange ausdrücklich, dass die digitale Dienstleistung vor Ablauf der Widerrufsfrist beginnt, und bestätige meine Kenntnis, dass das Widerrufsrecht bei vollständiger Vertragserfüllung erlischt.</span></label><div class="modal-actions"><button id="purchaseCancel" class="ghost-btn" type="button">Abbrechen</button><button id="purchaseProceed" class="small-primary" type="button" disabled>Weiter zu Stripe</button></div><p class="tiny">Keine echte Belastung im Testmodus.</p></section></div>
+  <section id="storageBanner" class="storage-banner glass" hidden aria-label="Speicher-Einstellungen"><div><strong>Speicher-Einstellungen</strong><p>Für die Spielsitzung nutzen wir technisch erforderlichen Browser-Speicher. Dauerhaftes Speichern von Profil-ID und Sprache ist optional. Wir setzen aktuell keine Werbe- oder Analyse-Cookies ein.</p></div><div class="storage-actions"><button id="storageNecessary" class="ghost-btn" type="button">Nur erforderlich</button><button id="storagePreferences" class="small-primary" type="button">Präferenzen dauerhaft speichern</button></div><a href="/datenschutz.html">Details im Datenschutz</a></section>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
