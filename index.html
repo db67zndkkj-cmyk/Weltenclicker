@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weltenclicker</title>
+  <meta name="description" content="Ein globaler Weltenclicker, an dem jeder teilnehmen kann." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="stars stars-a"></div>
+  <div class="stars stars-b"></div>
+
+  <main class="app">
+    <header class="topbar glass">
+      <div>
+        <p class="eyebrow">GLOBAL COMMUNITY CLICKER</p>
+        <h1>WELTEN<span>CLICKER</span></h1>
+      </div>
+      <div class="status">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">Verbindung wird hergestellt …</span>
+      </div>
+    </header>
+
+    <section class="hero-grid">
+      <section class="counter-card glass">
+        <p class="label">WELTEN VON ALLEN SPIELERN</p>
+        <div id="globalCount" class="global-count">0</div>
+        <p class="sub">Jeder Klick auf der Welt zählt zu derselben globalen Zahl.</p>
+
+        <div class="planet-wrap">
+          <button id="worldButton" class="planet-button" aria-label="Welt erschaffen">
+            <div class="planet">
+              <div class="planet-glow"></div>
+              <div class="continent c1"></div>
+              <div class="continent c2"></div>
+              <div class="continent c3"></div>
+            </div>
+          </button>
+          <div id="clickBurst" class="click-burst"></div>
+        </div>
+
+        <button id="mainClickButton" class="main-click">
+          + <span id="clickPower">1</span> WELT ERSCHAFFEN
+        </button>
+
+        <div class="mini-stats">
+          <div>
+            <span>Deine Welten</span>
+            <strong id="personalClicks">0</strong>
+          </div>
+          <div>
+            <span>Welten / Klick</span>
+            <strong id="powerDisplay">1</strong>
+          </div>
+          <div>
+            <span>Diese Sitzung</span>
+            <strong id="sessionClicks">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <aside class="shop-card glass">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">UPGRADES</p>
+            <h2>Deine Produktion</h2>
+          </div>
+          <div class="wallet">
+            <span>Energie</span>
+            <strong id="energy">0</strong>
+          </div>
+        </div>
+
+        <div id="shop" class="shop"></div>
+
+        <p class="shop-note">
+          Deine Upgrades und Energie werden jetzt serverseitig gespeichert. So kann der Browser die Klickstärke nicht einfach selbst verändern.
+        </p>
+      </aside>
+    </section>
+
+    <section class="info-grid">
+      <div class="glass info-card">
+        <p class="eyebrow">MISSION</p>
+        <h3>Eine Zahl. Eine Weltgemeinschaft.</h3>
+        <p>Jeder Besucher kann mitmachen. Alle erhöhen gemeinsam denselben Weltzähler.</p>
+      </div>
+      <div class="glass info-card">
+        <p class="eyebrow">LIVE</p>
+        <h3>Synchron für alle</h3>
+        <p>Mit Supabase wird der globale Zähler gespeichert und live an alle offenen Browser verteilt.</p>
+      </div>
+      <div class="glass info-card">
+        <p class="eyebrow">FAIR PLAY</p>
+        <h3>Sauberes Hochzählen</h3>
+        <p>Klickstärke, Energie und Upgrades werden serverseitig geprüft. Zusätzlich begrenzt das Backend auffällige Klickraten.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>Weltenclicker • Community-Projekt</span>
+      <span id="footerState">Serververbindung wird vorbereitet</span>
+    </footer>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
