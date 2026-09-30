@@ -79,6 +79,15 @@
             <button id="saveUsername" class="small-primary" data-i18n="save">Speichern</button>
           </div>
           <p id="usernameHelp" class="hint" data-i18n="usernameHint">Erlaubt: Buchstaben, Zahlen und _ . Dein Name bleibt in diesem Browser gespeichert.</p>
+          <div class="mascot-picker">
+            <p class="picker-label" data-i18n="chooseMascot">DEIN BEGLEITER</p>
+            <div id="mascotChoices" class="mascot-choices">
+              <button class="mascot-choice" data-mascot="orbix" type="button"><span>◉</span><b>Orbix</b></button>
+              <button class="mascot-choice" data-mascot="ashen_pup" type="button"><span>🐾</span><b>Ashen Pup</b></button>
+              <button class="mascot-choice" data-mascot="nova" type="button"><span>✦</span><b>Nova</b></button>
+              <button class="mascot-choice" data-mascot="mossling" type="button"><span>🍃</span><b>Mossling</b></button>
+            </div>
+          </div>
         </section>
 
         <section class="glass side-card">
@@ -131,6 +140,17 @@
       </aside>
     </section>
 
+    <section class="leaderboard-card glass">
+      <div class="leaderboard-head">
+        <div>
+          <p class="eyebrow" data-i18n="leaderboardEyebrow">GLOBAL</p>
+          <h2 data-i18n="leaderboardTitle">Top 10 Weltenbauer</h2>
+        </div>
+        <span class="leaderboard-live">● LIVE</span>
+      </div>
+      <div id="leaderboard" class="leaderboard"><div class="leaderboard-loading" data-i18n="leaderboardLoading">Rangliste wird geladen …</div></div>
+    </section>
+
     <section class="info-grid">
       <div class="glass info-card"><p class="eyebrow" data-i18n="mission">MISSION</p><h3 data-i18n="missionTitle">Eine Zahl. Eine Weltgemeinschaft.</h3><p data-i18n="missionText">Jeder Besucher kann mitmachen. Alle erhöhen gemeinsam denselben Weltzähler.</p></div>
       <div class="glass info-card"><p class="eyebrow">LIVE</p><h3 data-i18n="liveTitle">Synchron für alle</h3><p data-i18n="liveText">Supabase speichert den Zähler und verteilt Änderungen live an alle offenen Browser.</p></div>
@@ -142,6 +162,31 @@
       <span id="footerState" data-i18n="preparing">Serververbindung wird vorbereitet</span>
     </footer>
   </main>
+
+  <aside id="mascotCompanion" class="mascot-companion" aria-label="Weltenclicker mascot">
+    <div id="mascotBubble" class="mascot-bubble"></div>
+    <button id="mascotPet" class="mascot-pet" type="button" aria-label="Mascot pet">
+      <div id="mascotAvatar" class="mascot-avatar mascot-orbix">
+        <i class="m-ear m-ear-left"></i><i class="m-ear m-ear-right"></i>
+        <i class="m-cape"></i>
+        <i class="m-body">
+          <i class="m-eye m-eye-left"></i><i class="m-eye m-eye-right"></i>
+          <i class="m-mouth"></i>
+        </i>
+        <i id="mascotAccessory" class="m-accessory">✦</i>
+        <i class="m-shield">🛡️</i>
+      </div>
+    </button>
+    <div id="mascotParticles" class="mascot-particles"></div>
+    <div id="mascotName" class="mascot-name">Orbix</div>
+    <div class="mascot-tip" data-i18n="petHint">Klick mich zum Streicheln</div>
+  </aside>
+
+  <div id="gameEventOverlay" class="game-event-overlay">
+    <div class="event-kicker" id="gameEventKicker"></div>
+    <div class="event-title" id="gameEventTitle"></div>
+    <div class="event-subtitle" id="gameEventSubtitle"></div>
+  </div>
 
   <script src="config.js"></script>
   <script src="app.js"></script>
