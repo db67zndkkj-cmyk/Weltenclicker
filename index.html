@@ -89,6 +89,43 @@
           <button id="deleteProfileButton" class="danger-link-button" type="button">Profil & öffentliche Ranglistendaten löschen</button>
         </section>
 
+        <section class="glass side-card community-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow" data-i18n="communityEyebrow">COMMUNITY</p>
+              <h2 data-i18n="communityTitle">Dein Stream-Team</h2>
+            </div>
+            <span id="communityBadge" class="profile-badge">—</span>
+          </div>
+          <div id="communityCurrent" class="community-current">
+            <p class="hint" data-i18n="noCommunity">Du bist noch keiner Community beigetreten.</p>
+          </div>
+          <div class="community-join-row">
+            <input id="communityCodeInput" maxlength="20" autocomplete="off" spellcheck="false" placeholder="TEAMCODE">
+            <button id="joinCommunityButton" class="small-primary" type="button" data-i18n="joinCommunity">Beitreten</button>
+          </div>
+          <button id="leaveCommunityButton" class="ghost-btn community-leave" type="button" hidden data-i18n="leaveCommunity">Team verlassen</button>
+          <p id="communityHelp" class="hint" data-i18n="communityHint">Streamer teilen ihren Community-Code im Stream. Deine Klicks zählen dann zusätzlich für dieses Team.</p>
+
+          <div class="creator-hub">
+            <div class="creator-divider"></div>
+            <div class="section-head creator-head">
+              <div><p class="eyebrow">CREATOR HUB</p><h3 data-i18n="creatorTitle">Twitch verknüpfen</h3></div>
+              <span id="twitchVerifiedBadge" class="twitch-verified">TWITCH</span>
+            </div>
+            <div id="twitchProfile" class="twitch-profile" hidden></div>
+            <button id="twitchConnectButton" class="twitch-btn" type="button" disabled data-i18n="twitchSetup">Twitch-Verknüpfung wird vorbereitet</button>
+            <button id="twitchDisconnectButton" class="ghost-btn twitch-disconnect" type="button" hidden data-i18n="twitchDisconnect">Twitch abmelden</button>
+            <p id="twitchHelp" class="tiny" data-i18n="twitchHelp">Verifizierte Creator können eine eigene Community erstellen und später andere Streamer herausfordern.</p>
+            <div id="creatorCommunityForm" class="creator-form" hidden>
+              <input id="creatorCommunityName" maxlength="40" autocomplete="off" placeholder="Teamname">
+              <input id="creatorCommunityCode" maxlength="20" autocomplete="off" spellcheck="false" placeholder="TEAMCODE">
+              <button id="createCommunityButton" class="small-primary" type="button" data-i18n="createCommunity">Community erstellen</button>
+            </div>
+            <div id="creatorCommunityState" class="creator-community-state" hidden></div>
+          </div>
+        </section>
+
         <section class="glass side-card">
           <div class="section-head">
             <div>
@@ -150,6 +187,17 @@
         <span class="leaderboard-live">● LIVE</span>
       </div>
       <div id="leaderboard" class="leaderboard"><div class="leaderboard-loading" data-i18n="leaderboardLoading">Rangliste wird geladen …</div></div>
+    </section>
+
+    <section class="leaderboard-card glass community-leaderboard-card">
+      <div class="leaderboard-head">
+        <div>
+          <p class="eyebrow" data-i18n="communityRankEyebrow">STREAM TEAMS</p>
+          <h2 data-i18n="communityRankTitle">Top Communities</h2>
+        </div>
+        <span class="leaderboard-live">● LIVE</span>
+      </div>
+      <div id="communityLeaderboard" class="leaderboard"><div class="leaderboard-loading" data-i18n="communityRankLoading">Communities werden geladen …</div></div>
     </section>
 
     <section class="info-grid">

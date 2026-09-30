@@ -9,7 +9,7 @@ const I18N = {
     yourWorlds:"Deine Welten", worldsPerClick:"Welten / Klick", thisSession:"Diese Sitzung",
     profileEyebrow:"PROFIL", usernameTitle:"Benutzername", save:"Speichern",
     usernameHint:"Erlaubt: Buchstaben, Zahlen und _ . Dein Name bleibt in diesem Browser gespeichert.",
-    chooseMascot:"DEIN BEGLEITER", petHint:"Klick mich zum Streicheln",
+    chooseMascot:"DEIN BEGLEITER", petHint:"Klick mich zum Streicheln", communityEyebrow:"COMMUNITY", communityTitle:"Dein Stream-Team", noCommunity:"Du bist noch keiner Community beigetreten.", joinCommunity:"Beitreten", leaveCommunity:"Team verlassen", communityHint:"Streamer teilen ihren Community-Code im Stream. Deine Klicks zählen dann zusätzlich für dieses Team.", communityJoined:"Team beigetreten", communityNotFound:"Community-Code nicht gefunden.", communityLeft:"Team verlassen.", creatorTitle:"Twitch verknüpfen", twitchSetup:"Twitch-Verknüpfung wird vorbereitet", twitchConnect:"MIT TWITCH VERBINDEN", twitchDisconnect:"Twitch abmelden", twitchHelp:"Verifizierte Creator können eine eigene Community erstellen und später andere Streamer herausfordern.", createCommunity:"Community erstellen", communityCreated:"Community erstellt", creatorAlready:"Dieser Twitch-Account besitzt bereits eine Community.", communityTaken:"Code oder Twitch-Kanal ist bereits vergeben.", communityRankEyebrow:"STREAM TEAMS", communityRankTitle:"Top Communities", communityRankLoading:"Communities werden geladen …", members:"Mitglieder", teamWorlds:"Team-Welten",
     upgrades:"UPGRADES", production:"Deine Produktion", energy:"Energie", resetEyebrow:"UNIVERSUMS-RESET",
     resetTitle:"Support-Reset → zurück auf 0", resetDesc:"Ein bestätigter Support-Reset setzt den globalen Zähler, Energie und Upgrades aller ungeschützten Spieler zurück. Ein aktives Schild schützt deinen Fortschritt.",
     donationPending:"Support-Reset wird eingerichtet", donationReady:"TEST SUPPORT-RESET",
@@ -46,7 +46,7 @@ const I18N = {
     yourWorlds:"Your worlds", worldsPerClick:"Worlds / click", thisSession:"This session",
     profileEyebrow:"PROFILE", usernameTitle:"Username", save:"Save",
     usernameHint:"Allowed: letters, numbers and _ . Your identity is stored in this browser.",
-    chooseMascot:"YOUR COMPANION", petHint:"Click to pet me",
+    chooseMascot:"YOUR COMPANION", petHint:"Click to pet me", communityEyebrow:"COMMUNITY", communityTitle:"Your stream team", noCommunity:"You have not joined a community yet.", joinCommunity:"Join", leaveCommunity:"Leave team", communityHint:"Streamers share their community code on stream. Your clicks then also count for that team.", communityJoined:"Joined team", communityNotFound:"Community code not found.", communityLeft:"Left team.", creatorTitle:"Connect Twitch", twitchSetup:"Twitch connection is being prepared", twitchConnect:"CONNECT TWITCH", twitchDisconnect:"Sign out Twitch", twitchHelp:"Verified creators can create their own community and later challenge other streamers.", createCommunity:"Create community", communityCreated:"Community created", creatorAlready:"This Twitch account already owns a community.", communityTaken:"That code or Twitch channel is already taken.", communityRankEyebrow:"STREAM TEAMS", communityRankTitle:"Top Communities", communityRankLoading:"Loading communities …", members:"members", teamWorlds:"team worlds",
     upgrades:"UPGRADES", production:"Your production", energy:"Energy", resetEyebrow:"UNIVERSE RESET",
     resetTitle:"Support reset → reset to 0", resetDesc:"A confirmed support reset resets the global counter, energy and upgrades for every unprotected player. An active shield protects your progress.",
     donationPending:"Support reset payment is being connected", donationReady:"TEST SUPPORT RESET",
@@ -111,7 +111,7 @@ const state={
   clickPower:1,username:null,mascotId:"orbix",
   resetCount:0,lastResetAt:null,lastResetBy:null,
   shieldExpiresAt:null,lastShieldAt:null,lastShieldBy:null,
-  leaderboard:[],
+  leaderboard:[],communities:[],communityId:null,communityName:null,communityCode:null,communityWorlds:0,twitchUser:null,creatorCommunity:null,
   pendingClicks:0,sendingClicks:0,online:false,ready:false,flushTimer:null,retryTimer:null
 };
 activeStore().setItem("wc_session_id",state.sessionId);
@@ -177,13 +177,56 @@ function renderLeaderboard(){
   }).join("")
 }
 function escapeHtml(v){return String(v||"").replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
+function renderCommunity(){
+  const current=$("communityCurrent");
+  if(state.communityId){
+    current.innerHTML='<div class="current-team"><div><strong>'+escapeHtml(state.communityName||state.communityCode||"Team")+'</strong><span>#'+escapeHtml(state.communityCode||"")+'</span></div><div><strong>'+formatNumber(state.communityWorlds)+'</strong><span>'+t("teamWorlds")+'</span></div></div>';
+    $("communityBadge").textContent=state.communityCode||"TEAM";
+    $("leaveCommunityButton").hidden=false;
+  }else{
+    current.innerHTML='<p class="hint">'+t("noCommunity")+'</p>';
+    $("communityBadge").textContent="—";$("leaveCommunityButton").hidden=true;
+  }
+}
+function renderCommunityLeaderboard(){
+  const el=$("communityLeaderboard");
+  if(!state.communities.length){el.innerHTML='<div class="leaderboard-loading">'+t("communityRankLoading")+'</div>';return}
+  el.innerHTML=state.communities.map(function(row,i){
+    const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+row.rank;
+    return '<div class="leader-row community-row '+(row.id===state.communityId?"is-you":"")+'">'+
+      '<span class="leader-rank">'+medal+'</span>'+
+      '<span class="community-avatar">'+(row.twitch_avatar_url?'<img src="'+escapeHtml(row.twitch_avatar_url)+'" alt="">':'🟣')+'</span>'+
+      '<span class="leader-name"><strong>'+escapeHtml(row.name)+'</strong><small>#'+escapeHtml(row.code)+' · '+escapeHtml(row.twitch_display_name||row.twitch_login)+'</small></span>'+
+      '<span class="leader-worlds"><strong>'+formatNumber(row.total_worlds)+'</strong><small>'+formatNumber(row.members)+' '+t("members")+'</small></span>'+
+      '</div>'
+  }).join("")
+}
+function renderCreator(){
+  const connected=Boolean(state.twitchUser);
+  $("twitchVerifiedBadge").classList.toggle("active",connected);
+  $("twitchConnectButton").hidden=connected;
+  $("twitchDisconnectButton").hidden=!connected;
+  $("twitchConnectButton").disabled=!CONFIG.twitchEnabled;
+  $("twitchConnectButton").textContent=CONFIG.twitchEnabled?t("twitchConnect"):t("twitchSetup");
+  $("twitchProfile").hidden=!connected;
+  if(connected){
+    const u=state.twitchUser;
+    $("twitchProfile").innerHTML=(u.avatar?'<img src="'+escapeHtml(u.avatar)+'" alt="">':'')+'<div><strong>'+escapeHtml(u.displayName||u.login)+'</strong><a href="https://www.twitch.tv/'+encodeURIComponent(u.login)+'" target="_blank" rel="noopener">@'+escapeHtml(u.login)+'</a></div>';
+  }
+  $("creatorCommunityForm").hidden=!connected||Boolean(state.creatorCommunity&&state.creatorCommunity.community_id);
+  $("creatorCommunityState").hidden=!(connected&&state.creatorCommunity&&state.creatorCommunity.community_id);
+  if(!$("creatorCommunityState").hidden){
+    const c=state.creatorCommunity;
+    $("creatorCommunityState").innerHTML='<strong>'+escapeHtml(c.community_name)+'</strong><span>#'+escapeHtml(c.community_code)+'</span><small>'+formatNumber(c.members||0)+' '+t("members")+' · '+formatNumber(c.total_worlds||0)+' '+t("teamWorlds")+'</small>';
+  }
+}
 function render(){
   $("globalCount").textContent=formatNumber(state.globalCount);$("personalClicks").textContent=formatNumber(state.personalWorlds);
   $("energy").textContent=formatNumber(state.energy);$("sessionClicks").textContent=formatNumber(state.sessionWorlds);
   $("powerDisplay").textContent=formatNumber(state.clickPower);$("clickPower").textContent=formatNumber(state.clickPower);
   $("profileBadge").textContent=state.username||t("guest");
   if(state.username&&document.activeElement!==$("usernameInput"))$("usernameInput").value=state.username;
-  renderReset();renderShield();renderMascot();renderLeaderboard();
+  renderReset();renderShield();renderMascot();renderLeaderboard();renderCommunity();renderCommunityLeaderboard();renderCreator();
   const busy=!state.ready||state.sendingClicks>0||state.pendingClicks>0;
   $("shop").innerHTML=upgrades.map(function(item){
     const level=getLevel(item.id),cost=getCost(item),txt=item[lang];
@@ -225,13 +268,51 @@ function applyServerState(data){
   state.upgrades=data.upgrades||state.upgrades;state.clickPower=Number(data.click_power||1);state.username=data.username||null;
   state.mascotId=data.mascot_id||state.mascotId||"orbix";state.resetCount=Number(data.reset_count||0);state.lastResetAt=data.last_reset_at||null;
   state.lastResetBy=data.last_reset_by||null;state.shieldExpiresAt=data.shield_expires_at||null;
-  state.lastShieldAt=data.last_shield_at||state.lastShieldAt;state.lastShieldBy=data.last_shield_by||state.lastShieldBy;state.ready=true
+  state.lastShieldAt=data.last_shield_at||state.lastShieldAt;state.lastShieldBy=data.last_shield_by||state.lastShieldBy;state.communityId=data.community_id||null;state.communityName=data.community_name||null;state.communityCode=data.community_code||null;state.communityWorlds=Number(data.community_worlds||0);state.ready=true
 }
 async function gameApi(action,extra){
   const response=await fetch(CONFIG.supabaseUrl+"/functions/v1/world-game",{method:"POST",headers:{"Content-Type":"application/json","apikey":CONFIG.supabasePublishableKey},body:JSON.stringify(Object.assign({action:action,sessionId:state.sessionId},extra||{}))});
   let body={};try{body=await response.json()}catch(e){}
   if(!response.ok){const err=new Error(body.error||("HTTP_"+response.status));err.status=response.status;throw err}return body
 }
+async function authGameApi(action,extra){
+  const session=supabaseClient?(await supabaseClient.auth.getSession()).data.session:null;
+  const headers={"Content-Type":"application/json","apikey":CONFIG.supabasePublishableKey};
+  if(session?.access_token)headers.Authorization="Bearer "+session.access_token;
+  const response=await fetch(CONFIG.supabaseUrl+"/functions/v1/world-game",{method:"POST",headers,body:JSON.stringify(Object.assign({action,sessionId:state.sessionId},extra||{}))});
+  let body={};try{body=await response.json()}catch(e){}
+  if(!response.ok){const err=new Error(body.error||("HTTP_"+response.status));err.status=response.status;throw err}return body
+}
+async function loadCommunityLeaderboard(){try{const data=await gameApi("community_leaderboard");state.communities=Array.isArray(data.communities)?data.communities:[];renderCommunityLeaderboard()}catch(err){console.error(err)}}
+async function joinCommunity(){
+  const code=$("communityCodeInput").value.trim();
+  if(!/^[A-Za-z0-9_]{3,20}$/.test(code)){$("communityHelp").textContent=t("communityNotFound");return}
+  try{await gameApi("join_community",{communityCode:code});$("communityHelp").textContent=t("communityJoined");$("communityCodeInput").value="";await loadState();await loadCommunityLeaderboard()}catch(err){$("communityHelp").textContent=err.status===404?t("communityNotFound"):t("reconnect")}
+}
+async function leaveCommunity(){try{await gameApi("leave_community");$("communityHelp").textContent=t("communityLeft");await loadState();await loadCommunityLeaderboard()}catch(err){console.error(err)}}
+async function connectTwitch(){
+  if(!CONFIG.twitchEnabled||!supabaseClient)return;
+  const redirectTo=location.origin+"/?twitch=connected";
+  const {error}=await supabaseClient.auth.signInWithOAuth({provider:"twitch",options:{redirectTo}});
+  if(error){console.error(error);$("twitchHelp").textContent=error.message}
+}
+async function loadCreatorState(){
+  if(!supabaseClient)return;
+  const session=(await supabaseClient.auth.getSession()).data.session;
+  if(!session){state.twitchUser=null;state.creatorCommunity=null;renderCreator();return}
+  try{const data=await authGameApi("creator_state");state.twitchUser=data.twitch||null;state.creatorCommunity=data.community&&data.community.community_id?data.community:null;renderCreator()}catch(err){state.twitchUser=null;state.creatorCommunity=null;renderCreator()}
+}
+async function createCommunity(){
+  const name=$("creatorCommunityName").value.trim(),code=$("creatorCommunityCode").value.trim().toUpperCase();
+  if(name.length<3||name.length>40||!/^[A-Z0-9_]{3,20}$/.test(code)){$("twitchHelp").textContent=lang==="de"?"Teamname 3–40 Zeichen, Code 3–20 Zeichen (A–Z, 0–9, _).":"Team name 3–40 chars, code 3–20 chars (A–Z, 0–9, _).";return}
+  try{
+    const data=await authGameApi("create_community",{communityName:name,communityCode:code});
+    $("twitchHelp").textContent=t("communityCreated");await loadCreatorState();await loadState();await loadCommunityLeaderboard()
+  }catch(err){
+    $("twitchHelp").textContent=err.status===409?(err.message==="CREATOR_ALREADY_HAS_COMMUNITY"?t("creatorAlready"):t("communityTaken")):t("reconnect")
+  }
+}
+async function disconnectTwitch(){if(!supabaseClient)return;await supabaseClient.auth.signOut();state.twitchUser=null;state.creatorCommunity=null;renderCreator()}
 function scheduleFlush(delay){clearTimeout(state.flushTimer);state.flushTimer=setTimeout(flushClicks,delay||90)}
 function scheduleRetry(){clearTimeout(state.retryTimer);state.retryTimer=setTimeout(async function(){if(state.pendingClicks>0&&state.sendingClicks===0)await flushClicks();else if(!state.online)await loadState()},2500)}
 async function flushClicks(){
@@ -277,7 +358,7 @@ async function loadState(){
 
 let supabaseClient=null,realtimeChannel=null;
 function initRealtime(){
-  supabaseClient=window.supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{auth:{persistSession:false,autoRefreshToken:false}});
+  supabaseClient=window.supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   realtimeChannel=supabaseClient.channel("weltenclicker-live").on("postgres_changes",{event:"UPDATE",schema:"public",table:"world_counter",filter:"id=eq.1"},function(payload){
     const row=payload.new||{},serverGlobal=Number(row.count||0),optimistic=state.pendingClicks*state.clickPower;
     const prevReset=state.resetCount,prevShield=state.lastShieldAt;
@@ -287,7 +368,8 @@ function initRealtime(){
     render();
     if(state.resetCount>prevReset){showGameEvent("reset");mascotReact("shocked","resetMascot",1900);setTimeout(loadState,180);setTimeout(loadLeaderboard,500)}
     if(row.last_shield_at&&row.last_shield_at!==prevShield){showGameEvent("shield");if(row.last_shield_by===state.username){mascotReact("shield-pop","shieldMascot",1600);setTimeout(loadState,180)}}
-  }).subscribe()
+  }).subscribe();
+  supabaseClient.auth.onAuthStateChange(function(){setTimeout(loadCreatorState,0)});
 }
 
 let pendingPurchaseUrl=null;
@@ -307,6 +389,12 @@ $("donationButton").addEventListener("click",function(){openPurchase("reset")});
 $("shieldButton").addEventListener("click",async function(){if(!state.username||!CONFIG.shieldUrl)return;try{await navigator.clipboard.writeText(state.username);$("shieldHint").textContent=t("shieldCopied")}catch(e){}openPurchase("shield")});
 $("mascotPet").addEventListener("click",petMascot);
 document.querySelectorAll("[data-mascot]").forEach(function(btn){btn.addEventListener("click",function(){setMascot(btn.dataset.mascot)})});
+$("joinCommunityButton").addEventListener("click",joinCommunity);
+$("communityCodeInput").addEventListener("keydown",function(e){if(e.key==="Enter")joinCommunity()});
+$("leaveCommunityButton").addEventListener("click",leaveCommunity);
+$("twitchConnectButton").addEventListener("click",connectTwitch);
+$("twitchDisconnectButton").addEventListener("click",disconnectTwitch);
+$("createCommunityButton").addEventListener("click",createCommunity);
 $("deleteProfileButton").addEventListener("click",deleteProfile);
 ["purchaseAge","purchaseTerms","purchaseEarly"].forEach(id=>$(id).addEventListener("change",setPurchaseChecks));
 $("purchaseClose").addEventListener("click",closePurchase);$("purchaseCancel").addEventListener("click",closePurchase);document.querySelectorAll("[data-close-purchase]").forEach(el=>el.addEventListener("click",closePurchase));$("purchaseProceed").addEventListener("click",function(){if(pendingPurchaseUrl&&!$("purchaseProceed").disabled)location.href=pendingPurchaseUrl});$("storageNecessary").addEventListener("click",()=>setStorageConsent("necessary"));$("storagePreferences").addEventListener("click",()=>setStorageConsent("preferences"));$("privacySettingsButton").addEventListener("click",()=>{$("storageBanner").hidden=false});
@@ -315,6 +403,6 @@ window.addEventListener("beforeunload",function(){try{if(realtimeChannel&&supaba
 
 document.body.classList.toggle("streamer-mode",streamerMode);
 applyLanguage();render();initRealtime();
-Promise.all([loadState(),loadLeaderboard()]);
+Promise.all([loadState(),loadLeaderboard(),loadCommunityLeaderboard()]).then(loadCreatorState);
 setInterval(function(){if(state.shieldExpiresAt)renderShield()},1000);
-leaderboardTimer=setInterval(loadLeaderboard,15000);
+leaderboardTimer=setInterval(function(){loadLeaderboard();loadCommunityLeaderboard()},15000);
