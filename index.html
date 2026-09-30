@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Weltenclicker</title>
-  <meta name="description" content="Ein globaler Weltenclicker, an dem jeder teilnehmen kann." />
+  <meta name="description" content="Global community clicker">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="stars stars-a"></div>
@@ -21,17 +21,26 @@
         <p class="eyebrow">GLOBAL COMMUNITY CLICKER</p>
         <h1>WELTEN<span>CLICKER</span></h1>
       </div>
-      <div class="status">
-        <span id="statusDot" class="dot"></span>
-        <span id="statusText">Verbindung wird hergestellt …</span>
+      <div class="top-actions">
+        <button id="langToggle" class="ghost-btn">EN</button>
+        <button id="streamToggle" class="ghost-btn" data-i18n="streamMode">Streamer-Modus</button>
+        <div class="status">
+          <span id="statusDot" class="dot"></span>
+          <span id="statusText" data-i18n="connecting">Verbindung wird hergestellt …</span>
+        </div>
       </div>
     </header>
 
     <section class="hero-grid">
       <section class="counter-card glass">
-        <p class="label">WELTEN VON ALLEN SPIELERN</p>
+        <div class="reset-strip">
+          <span><span data-i18n="resets">Resets</span>: <strong id="resetCount">0</strong></span>
+          <span id="lastResetText" data-i18n="noReset">Noch kein Universums-Reset</span>
+        </div>
+
+        <p class="label" data-i18n="globalLabel">WELTEN VON ALLEN SPIELERN</p>
         <div id="globalCount" class="global-count">0</div>
-        <p class="sub">Jeder Klick auf der Welt zählt zu derselben globalen Zahl.</p>
+        <p class="sub" data-i18n="globalSub">Jeder Klick auf der Welt zählt zu derselben globalen Zahl.</p>
 
         <div class="planet-wrap">
           <button id="worldButton" class="planet-button" aria-label="Welt erschaffen">
@@ -46,66 +55,77 @@
         </div>
 
         <button id="mainClickButton" class="main-click">
-          + <span id="clickPower">1</span> WELT ERSCHAFFEN
+          + <span id="clickPower">1</span> <span data-i18n="createWorld">WELT ERSCHAFFEN</span>
         </button>
 
         <div class="mini-stats">
-          <div>
-            <span>Deine Welten</span>
-            <strong id="personalClicks">0</strong>
-          </div>
-          <div>
-            <span>Welten / Klick</span>
-            <strong id="powerDisplay">1</strong>
-          </div>
-          <div>
-            <span>Diese Sitzung</span>
-            <strong id="sessionClicks">0</strong>
-          </div>
+          <div><span data-i18n="yourWorlds">Deine Welten</span><strong id="personalClicks">0</strong></div>
+          <div><span data-i18n="worldsPerClick">Welten / Klick</span><strong id="powerDisplay">1</strong></div>
+          <div><span data-i18n="thisSession">Diese Sitzung</span><strong id="sessionClicks">0</strong></div>
         </div>
       </section>
 
-      <aside class="shop-card glass">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">UPGRADES</p>
-            <h2>Deine Produktion</h2>
+      <aside class="side-column">
+        <section class="glass side-card profile-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow" data-i18n="profileEyebrow">PROFIL</p>
+              <h2 data-i18n="usernameTitle">Benutzername</h2>
+            </div>
+            <span id="profileBadge" class="profile-badge">Guest</span>
           </div>
-          <div class="wallet">
-            <span>Energie</span>
-            <strong id="energy">0</strong>
+          <div class="username-row">
+            <input id="usernameInput" maxlength="20" autocomplete="off" spellcheck="false" placeholder="3–20 Zeichen">
+            <button id="saveUsername" class="small-primary" data-i18n="save">Speichern</button>
           </div>
-        </div>
+          <p id="usernameHelp" class="hint" data-i18n="usernameHint">Erlaubt: Buchstaben, Zahlen und _ . Dein Name bleibt in diesem Browser gespeichert.</p>
+        </section>
 
-        <div id="shop" class="shop"></div>
+        <section class="glass side-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow" data-i18n="upgrades">UPGRADES</p>
+              <h2 data-i18n="production">Deine Produktion</h2>
+            </div>
+            <div class="wallet"><span data-i18n="energy">Energie</span><strong id="energy">0</strong></div>
+          </div>
+          <div id="shop" class="shop"></div>
+        </section>
 
-        <p class="shop-note">
-          Deine Upgrades und Energie werden jetzt serverseitig gespeichert. So kann der Browser die Klickstärke nicht einfach selbst verändern.
-        </p>
+        <section class="glass side-card donation-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow" data-i18n="resetEyebrow">UNIVERSUMS-RESET</p>
+              <h2 data-i18n="resetTitle">Donation → zurück auf 0</h2>
+            </div>
+            <span class="danger-chip">∞</span>
+          </div>
+          <p class="hint" data-i18n="resetDesc">Eine bestätigte Donation kann den globalen Zähler auf 0 setzen. Persönliche Upgrades bleiben erhalten – dadurch kann der Clicker endlos weiterlaufen.</p>
+          <button id="donationButton" class="reset-btn" disabled data-i18n="donationPending">Donation-Zahlung wird eingerichtet</button>
+          <p id="donationHint" class="tiny" data-i18n="donationSecure">Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst.</p>
+        </section>
+
+        <section class="glass side-card streamer-card">
+          <p class="eyebrow">OBS / STREAM</p>
+          <h2 data-i18n="streamerTitle">Overlay für Streams</h2>
+          <p class="hint" data-i18n="streamerDesc">Transparente Browser-Source mit Live-Zähler und Reset-Anzeige.</p>
+          <div class="stream-actions">
+            <a id="overlayLink" class="small-primary link-btn" href="/overlay.html" target="_blank" rel="noopener" data-i18n="openOverlay">Overlay öffnen</a>
+            <button id="copyOverlay" class="ghost-btn" data-i18n="copyUrl">URL kopieren</button>
+          </div>
+        </section>
       </aside>
     </section>
 
     <section class="info-grid">
-      <div class="glass info-card">
-        <p class="eyebrow">MISSION</p>
-        <h3>Eine Zahl. Eine Weltgemeinschaft.</h3>
-        <p>Jeder Besucher kann mitmachen. Alle erhöhen gemeinsam denselben Weltzähler.</p>
-      </div>
-      <div class="glass info-card">
-        <p class="eyebrow">LIVE</p>
-        <h3>Synchron für alle</h3>
-        <p>Mit Supabase wird der globale Zähler gespeichert und live an alle offenen Browser verteilt.</p>
-      </div>
-      <div class="glass info-card">
-        <p class="eyebrow">FAIR PLAY</p>
-        <h3>Sauberes Hochzählen</h3>
-        <p>Klickstärke, Energie und Upgrades werden serverseitig geprüft. Zusätzlich begrenzt das Backend auffällige Klickraten.</p>
-      </div>
+      <div class="glass info-card"><p class="eyebrow" data-i18n="mission">MISSION</p><h3 data-i18n="missionTitle">Eine Zahl. Eine Weltgemeinschaft.</h3><p data-i18n="missionText">Jeder Besucher kann mitmachen. Alle erhöhen gemeinsam denselben Weltzähler.</p></div>
+      <div class="glass info-card"><p class="eyebrow">LIVE</p><h3 data-i18n="liveTitle">Synchron für alle</h3><p data-i18n="liveText">Supabase speichert den Zähler und verteilt Änderungen live an alle offenen Browser.</p></div>
+      <div class="glass info-card"><p class="eyebrow" data-i18n="fairPlay">FAIR PLAY</p><h3 data-i18n="fairTitle">Serverseitig geprüft</h3><p data-i18n="fairText">Klickstärke, Energie, Upgrades und Resets werden nicht vom Browser bestimmt.</p></div>
     </section>
 
     <footer>
-      <span>Weltenclicker • Community-Projekt</span>
-      <span id="footerState">Serververbindung wird vorbereitet</span>
+      <span>Weltenclicker • Community Project</span>
+      <span id="footerState" data-i18n="preparing">Serververbindung wird vorbereitet</span>
     </footer>
   </main>
 

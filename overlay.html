@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weltenclicker OBS Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <main class="overlay-shell">
+    <div class="orb"></div>
+    <div class="overlay-copy">
+      <div id="overlayLabel" class="overlay-label">GLOBAL WORLDS</div>
+      <div id="overlayCount" class="overlay-count">0</div>
+      <div class="overlay-meta">
+        <span id="overlayStatus">LIVE</span>
+        <span>•</span>
+        <span id="overlayResets">0 RESETS</span>
+        <span id="overlayLastReset"></span>
+      </div>
+    </div>
+  </main>
+  <script src="config.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>
