@@ -10,9 +10,9 @@ const I18N = {
     profileEyebrow:"PROFIL", usernameTitle:"Benutzername", save:"Speichern",
     usernameHint:"Erlaubt: Buchstaben, Zahlen und _ . Dein Name bleibt in diesem Browser gespeichert.",
     upgrades:"UPGRADES", production:"Deine Produktion", energy:"Energie", resetEyebrow:"UNIVERSUMS-RESET",
-    resetTitle:"Donation → zurück auf 0", resetDesc:"Eine bestätigte Donation kann den globalen Zähler auf 0 setzen. Persönliche Upgrades bleiben erhalten – dadurch kann der Clicker endlos weiterlaufen.",
+    resetTitle:"Donation → zurück auf 0", resetDesc:"Eine bestätigte Donation setzt den globalen Zähler, Energie und Upgrades aller ungeschützten Spieler zurück. Ein aktives Schild schützt deinen Fortschritt.",
     donationPending:"Donation-Zahlung wird eingerichtet", donationReady:"TEST-SPENDE & UNIVERSUM RESETTEN",
-    donationSecure:"Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst.",
+    donationSecure:"Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst.", shieldEyebrow:"RESET-SCHUTZ", shieldTitle:"15-Minuten Schild", shieldInactive:"Kein aktives Schild", shieldActive:"Schild aktiv", shieldDesc:"Für 2 € schützt das Schild 15 Minuten lang deine Energie und Upgrades vor einem Universums-Reset.", shieldButton:"TEST-SCHILD FÜR 2 € KAUFEN", shieldUsernameHint:"Du brauchst zuerst einen Benutzernamen. Beim Stripe-Test bitte exakt denselben Namen eingeben.", shieldReadyHint:"Beim Stripe-Test exakt deinen Benutzernamen eingeben. Weitere Käufe verlängern die Restzeit um 15 Minuten.", shieldCopied:"Benutzername kopiert – im Stripe-Feld einfügen.",
     streamerTitle:"Overlay für Streams", streamerDesc:"Transparente Browser-Source mit Live-Zähler und Reset-Anzeige.",
     openOverlay:"Overlay öffnen", copyUrl:"URL kopieren", copied:"Kopiert!",
     mission:"MISSION", missionTitle:"Eine Zahl. Eine Weltgemeinschaft.", missionText:"Jeder Besucher kann mitmachen. Alle erhöhen gemeinsam denselben Weltzähler.",
@@ -30,9 +30,9 @@ const I18N = {
     profileEyebrow:"PROFILE", usernameTitle:"Username", save:"Save",
     usernameHint:"Allowed: letters, numbers and _ . Your identity is stored in this browser.",
     upgrades:"UPGRADES", production:"Your production", energy:"Energy", resetEyebrow:"UNIVERSE RESET",
-    resetTitle:"Donation → reset to 0", resetDesc:"A confirmed donation can reset the global counter to 0. Personal upgrades stay intact, so the clicker can continue forever.",
+    resetTitle:"Donation → reset to 0", resetDesc:"A confirmed donation resets the global counter, energy and upgrades for every unprotected player. An active shield protects your progress.",
     donationPending:"Donation payments are being connected", donationReady:"TEST DONATION & RESET UNIVERSE",
-    donationSecure:"The reset only happens server-side after a confirmed payment.",
+    donationSecure:"The reset only happens server-side after a confirmed payment.", shieldEyebrow:"RESET PROTECTION", shieldTitle:"15-minute shield", shieldInactive:"No active shield", shieldActive:"Shield active", shieldDesc:"For €2 the shield protects your energy and upgrades from a universe reset for 15 minutes.", shieldButton:"BUY TEST SHIELD FOR €2", shieldUsernameHint:"Create a username first. In Stripe test checkout, enter exactly the same username.", shieldReadyHint:"Enter your exact username in Stripe. Extra purchases extend remaining protection by 15 minutes.", shieldCopied:"Username copied – paste it into the Stripe field.",
     streamerTitle:"Stream overlay", streamerDesc:"Transparent browser source with live counter and reset information.",
     openOverlay:"Open overlay", copyUrl:"Copy URL", copied:"Copied!",
     mission:"MISSION", missionTitle:"One number. One global community.", missionText:"Everyone can participate. All visitors grow the same shared counter.",
@@ -65,7 +65,7 @@ const state = {
   sessionId: localStorage.getItem("wc_session_id") || makeSessionId(),
   globalCount:0, personalWorlds:0, energy:0, sessionWorlds:0,
   upgrades:{hands:0,portal:0,reactor:0,multiverse:0},
-  clickPower:1, username:null, resetCount:0, lastResetAt:null, lastResetBy:null,
+  clickPower:1, username:null, resetCount:0, lastResetAt:null, lastResetBy:null, shieldExpiresAt:null,
   pendingClicks:0, sendingClicks:0, online:false, ready:false, flushTimer:null, retryTimer:null
 };
 localStorage.setItem("wc_session_id",state.sessionId);
@@ -103,6 +103,23 @@ function renderReset(){
   const when=d.toLocaleString(lang==="de"?"de-DE":"en-US",{dateStyle:"short",timeStyle:"short"});
   $("lastResetText").textContent=t("lastReset")+": "+when+(state.lastResetBy?" • "+t("by")+" "+state.lastResetBy:"");
 }
+function formatShieldTime(ms){
+  if(ms<=0)return "00:00";
+  const total=Math.ceil(ms/1000), minutes=Math.floor(total/60), seconds=total%60;
+  return String(minutes).padStart(2,"0")+":"+String(seconds).padStart(2,"0");
+}
+function renderShield(){
+  const expires=state.shieldExpiresAt?new Date(state.shieldExpiresAt).getTime():0;
+  const remaining=expires-Date.now();
+  const active=remaining>0;
+  $("shieldStatus").textContent=active?t("shieldActive")+" • "+formatShieldTime(remaining):t("shieldInactive");
+  $("shieldStatus").classList.toggle("active",active);
+  $("shieldBadge").classList.toggle("active",active);
+  const ready=Boolean(CONFIG.shieldUrl)&&Boolean(state.username);
+  $("shieldButton").disabled=!ready;
+  $("shieldButton").textContent=t("shieldButton");
+  $("shieldHint").textContent=state.username?t("shieldReadyHint"):t("shieldUsernameHint");
+}
 function render(){
   $("globalCount").textContent=formatNumber(state.globalCount);
   $("personalClicks").textContent=formatNumber(state.personalWorlds);
@@ -113,6 +130,7 @@ function render(){
   $("profileBadge").textContent=state.username||t("guest");
   if(state.username && document.activeElement!==$("usernameInput")) $("usernameInput").value=state.username;
   renderReset();
+  renderShield();
   const busy=!state.ready||state.sendingClicks>0||state.pendingClicks>0;
   $("shop").innerHTML=upgrades.map(function(item){
     const level=getLevel(item.id), cost=getCost(item), text=item[lang];
@@ -133,7 +151,7 @@ function animateClick(amount){
 function applyServerState(data){
   if(!data)return;state.globalCount=Number(data.global_count||0);state.personalWorlds=Number(data.personal_worlds||0);
   state.energy=Number(data.energy||0);state.upgrades=data.upgrades||state.upgrades;state.clickPower=Number(data.click_power||1);
-  state.username=data.username||null;state.resetCount=Number(data.reset_count||0);state.lastResetAt=data.last_reset_at||null;state.lastResetBy=data.last_reset_by||null;state.ready=true
+  state.username=data.username||null;state.resetCount=Number(data.reset_count||0);state.lastResetAt=data.last_reset_at||null;state.lastResetBy=data.last_reset_by||null;state.shieldExpiresAt=data.shield_expires_at||null;state.ready=true
 }
 async function gameApi(action,extra){
   const response=await fetch(CONFIG.supabaseUrl+"/functions/v1/world-game",{method:"POST",headers:{"Content-Type":"application/json","apikey":CONFIG.supabasePublishableKey},body:JSON.stringify(Object.assign({action:action,sessionId:state.sessionId},extra||{}))});
@@ -176,8 +194,10 @@ function initRealtime(){
   supabaseClient=window.supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{auth:{persistSession:false,autoRefreshToken:false}});
   realtimeChannel=supabaseClient.channel("weltenclicker-live").on("postgres_changes",{event:"UPDATE",schema:"public",table:"world_counter",filter:"id=eq.1"},function(payload){
     const row=payload.new||{},serverGlobal=Number(row.count||0),optimistic=state.pendingClicks*state.clickPower;
-    if(Number.isFinite(serverGlobal))state.globalCount=Math.max(serverGlobal,serverGlobal+optimistic);
-    state.resetCount=Number(row.reset_count||state.resetCount||0);state.lastResetAt=row.last_reset_at||state.lastResetAt;state.lastResetBy=row.last_reset_by||state.lastResetBy;render()
+    const previousResetCount=state.resetCount;
+    if(Number.isFinite(serverGlobal))state.globalCount=serverGlobal+optimistic;
+    state.resetCount=Number(row.reset_count||state.resetCount||0);state.lastResetAt=row.last_reset_at||state.lastResetAt;state.lastResetBy=row.last_reset_by||state.lastResetBy;render();
+    if(state.resetCount>previousResetCount)setTimeout(loadState,120);
   }).subscribe()
 }
 
@@ -191,6 +211,7 @@ $("copyOverlay").addEventListener("click",async function(){
   const url=$("overlayLink").href;try{await navigator.clipboard.writeText(url);$("copyOverlay").textContent=t("copied");setTimeout(function(){$("copyOverlay").textContent=t("copyUrl")},1200)}catch(e){window.prompt("OBS URL",url)}
 });
 $("donationButton").addEventListener("click",function(){if(CONFIG.donationUrl)location.href=CONFIG.donationUrl});
+$("shieldButton").addEventListener("click",async function(){if(!state.username||!CONFIG.shieldUrl)return;try{await navigator.clipboard.writeText(state.username);$("shieldHint").textContent=t("shieldCopied")}catch(e){}setTimeout(function(){location.href=CONFIG.shieldUrl},180)});
 document.addEventListener("keydown",function(e){if(e.code==="Space"&&e.target===document.body){e.preventDefault();createWorld()}});
 window.addEventListener("beforeunload",function(){try{if(realtimeChannel&&supabaseClient)supabaseClient.removeChannel(realtimeChannel)}catch(e){}});
 
@@ -199,3 +220,4 @@ applyLanguage();
 render();
 initRealtime();
 loadState();
+setInterval(function(){if(state.shieldExpiresAt)renderShield()},1000);

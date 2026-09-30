@@ -100,9 +100,23 @@
             </div>
             <span class="danger-chip">∞</span>
           </div>
-          <p class="hint" data-i18n="resetDesc">Eine bestätigte Donation kann den globalen Zähler auf 0 setzen. Persönliche Upgrades bleiben erhalten – dadurch kann der Clicker endlos weiterlaufen.</p>
+          <p class="hint" data-i18n="resetDesc">Eine bestätigte Donation setzt den globalen Zähler auf 0 und löscht Energie sowie Upgrades aller ungeschützten Spieler. Ein aktives Schild schützt deinen Fortschritt.</p>
           <button id="donationButton" class="reset-btn" disabled data-i18n="donationPending">Donation-Zahlung wird eingerichtet</button>
           <p id="donationHint" class="tiny" data-i18n="donationSecure">Der Reset wird nur serverseitig nach bestätigter Zahlung ausgelöst.</p>
+        </section>
+
+        <section class="glass side-card shield-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow" data-i18n="shieldEyebrow">RESET-SCHUTZ</p>
+              <h2 data-i18n="shieldTitle">15-Minuten Schild</h2>
+            </div>
+            <span id="shieldBadge" class="shield-badge">🛡️</span>
+          </div>
+          <p id="shieldStatus" class="shield-status" data-i18n="shieldInactive">Kein aktives Schild</p>
+          <p class="hint" data-i18n="shieldDesc">Für 2 € schützt das Schild 15 Minuten lang deine Energie und Upgrades vor einem Universums-Reset.</p>
+          <button id="shieldButton" class="shield-btn" type="button" disabled data-i18n="shieldButton">TEST-SCHILD FÜR 2 € KAUFEN</button>
+          <p id="shieldHint" class="tiny" data-i18n="shieldUsernameHint">Du brauchst zuerst einen Benutzernamen. Beim Stripe-Test bitte exakt denselben Namen eingeben.</p>
         </section>
 
         <section class="glass side-card streamer-card">
