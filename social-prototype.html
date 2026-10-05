@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Weltenclicker Social Hub Prototype">
+  <title>Weltenclicker Social Hub – Prototype</title>
+  <link rel="stylesheet" href="/social-prototype.css">
+</head>
+<body>
+  <div class="prototype-ribbon">INTERAKTIVER PROTOTYP · DEMODATEN · NOCH KEINE ECHTEN SOCIAL-FUNKTIONEN</div>
+
+  <div class="social-shell">
+    <aside class="left-rail">
+      <a class="brand" href="/"><span class="brand-orb">◉</span><span>WELTEN<b>CLICKER</b></span></a>
+
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <button class="nav-item active" data-view="home"><span>⌂</span><b>Home</b></button>
+        <button class="nav-item" data-view="explore"><span>⌕</span><b>Entdecken</b></button>
+        <button class="nav-item" data-view="raids"><span>⚔</span><b>Raids</b><em>2</em></button>
+        <button class="nav-item" data-view="communities"><span>◎</span><b>Communities</b></button>
+        <button class="nav-item" data-view="notifications"><span>◇</span><b>Aktivität</b><em id="notifBadge">5</em></button>
+        <button class="nav-item" data-view="messages"><span>✉</span><b>Nachrichten</b><em>3</em></button>
+        <button class="nav-item creator-nav" data-view="creator"><span>▣</span><b>Creator Hub</b></button>
+      </nav>
+
+      <button id="openComposer" class="create-post">+ POST ERSTELLEN</button>
+
+      <div class="account-mini">
+        <div class="avatar avatar-you">SL</div>
+        <div><strong>Sascha</strong><span>@SaschaWorlds</span></div>
+        <button id="accountMenu" aria-label="Account-Menü">•••</button>
+      </div>
+    </aside>
+
+    <main class="main-column">
+      <header class="mobile-top">
+        <a class="brand compact" href="/"><span class="brand-orb">◉</span><span>WELTEN<b>CLICKER</b></span></a>
+        <button class="icon-btn" data-view="notifications">◇</button>
+      </header>
+
+      <section id="view-home" class="view active">
+        <div class="view-head">
+          <div><span class="eyebrow">SOCIAL HUB</span><h1>Für dich</h1></div>
+          <div class="feed-tabs">
+            <button class="feed-tab active" data-feed="for-you">Für dich</button>
+            <button class="feed-tab" data-feed="following">Folge ich</button>
+            <button class="feed-tab" data-feed="live">Live</button>
+          </div>
+        </div>
+
+        <div class="live-strip">
+          <button class="live-card live-add" data-view="creator"><span>+</span><strong>Dein Stream</strong><small>Creator Hub</small></button>
+          <button class="live-card" data-profile="nova"><span class="live-ring"><i>N</i></span><strong>NovaNeko</strong><small>12,4K live</small></button>
+          <button class="live-card" data-profile="ash"><span class="live-ring"><i>A</i></span><strong>AshenTV</strong><small>4,8K live</small></button>
+          <button class="live-card" data-profile="orb"><span class="live-ring"><i>O</i></span><strong>OrbitalJonas</strong><small>2,1K live</small></button>
+          <button class="live-card" data-profile="moss"><span class="live-ring"><i>M</i></span><strong>MossBoss</strong><small>899 live</small></button>
+        </div>
+
+        <section class="composer-inline card">
+          <div class="avatar avatar-you">SL</div>
+          <button id="inlineCompose" class="composer-placeholder">Teile einen Meilenstein, Clip oder Raid-Aufruf …</button>
+          <button class="composer-quick" id="quickWorldPost">🌍</button>
+        </section>
+
+        <div id="feed" class="feed"></div>
+      </section>
+
+      <section id="view-explore" class="view">
+        <div class="view-head">
+          <div><span class="eyebrow">DISCOVERY</span><h1>Entdecken</h1></div>
+        </div>
+        <div class="search-wrap">
+          <span>⌕</span><input id="exploreSearch" type="search" placeholder="Creator, Community, #Hashtag oder Raid suchen">
+        </div>
+        <div class="filter-chips">
+          <button class="chip active" data-explore-filter="all">Alle</button>
+          <button class="chip" data-explore-filter="creators">Creator</button>
+          <button class="chip" data-explore-filter="communities">Communities</button>
+          <button class="chip" data-explore-filter="clips">Clips</button>
+          <button class="chip" data-explore-filter="raids">Raids</button>
+        </div>
+        <section class="section-block">
+          <div class="section-title"><h2>Creator, die gerade wachsen</h2><button>Alle ansehen</button></div>
+          <div id="creatorGrid" class="creator-grid"></div>
+        </section>
+        <section class="section-block">
+          <div class="section-title"><h2>Beliebte Communities</h2><button data-view="communities">Rangliste</button></div>
+          <div id="communityGrid" class="community-grid"></div>
+        </section>
+        <section class="section-block">
+          <div class="section-title"><h2>Trending</h2></div>
+          <div class="trend-grid">
+            <button class="trend-card"><span>#1 · Gaming</span><strong>#WorldWar</strong><small>18,2K Beiträge</small></button>
+            <button class="trend-card"><span>#2 · Weltenclicker</span><strong>#TeamNova</strong><small>7,9K Beiträge</small></button>
+            <button class="trend-card"><span>#3 · Live</span><strong>#BossRush</strong><small>6,1K Beiträge</small></button>
+            <button class="trend-card"><span>#4 · Community</span><strong>#RoadTo1B</strong><small>4,4K Beiträge</small></button>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-raids" class="view">
+        <div class="view-head">
+          <div><span class="eyebrow">COMMUNITY VS COMMUNITY</span><h1>Raids</h1></div>
+          <button class="primary small" id="challengeCreator">+ Herausforderung</button>
+        </div>
+
+        <article class="raid-hero card">
+          <div class="raid-live-label">● LIVE RAID · 07:42 RESTZEIT</div>
+          <div class="raid-versus">
+            <div class="raid-team">
+              <div class="team-emblem purple">N</div>
+              <strong>Team Nova</strong><span>12.847 Spieler</span>
+              <b>18.429.210</b>
+            </div>
+            <div class="raid-center">
+              <span>⚔</span><strong>VS</strong><small>10 MIN RAID</small>
+            </div>
+            <div class="raid-team">
+              <div class="team-emblem red">A</div>
+              <strong>Ashen Army</strong><span>10.291 Spieler</span>
+              <b>17.981.443</b>
+            </div>
+          </div>
+          <div class="battle-meter"><i style="width:50.6%"></i></div>
+          <div class="raid-delta">Team Nova führt mit <strong>447.767</strong> Welten</div>
+          <div class="raid-actions">
+            <button class="primary" id="joinRaid">FÜR TEAM NOVA KÄMPFEN</button>
+            <button class="secondary" id="watchRaid">Raid verfolgen</button>
+          </div>
+        </article>
+
+        <section class="section-block">
+          <div class="section-title"><h2>Anstehende Raids</h2><button>Kalender</button></div>
+          <div class="upcoming-raids">
+            <article class="mini-raid card"><span>HEUTE · 20:00</span><strong>Moss Legion <b>VS</b> Orbital Crew</strong><small>8.240 Interessierte</small><button class="secondary reminder-btn">Erinnern</button></article>
+            <article class="mini-raid card"><span>MORGEN · 18:30</span><strong>Voidwalkers <b>VS</b> Team Pixel</strong><small>5.711 Interessierte</small><button class="secondary reminder-btn">Erinnern</button></article>
+          </div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-title"><h2>Season 1 Rangliste</h2></div>
+          <div class="season-table card">
+            <div class="season-row head"><span>#</span><span>Community</span><span>W-L</span><span>Punkte</span></div>
+            <div class="season-row"><b>1</b><span>Team Nova</span><span>18–3</span><strong>54</strong></div>
+            <div class="season-row"><b>2</b><span>Ashen Army</span><span>17–4</span><strong>51</strong></div>
+            <div class="season-row"><b>3</b><span>Moss Legion</span><span>15–6</span><strong>45</strong></div>
+            <div class="season-row"><b>4</b><span>Orbital Crew</span><span>14–7</span><strong>42</strong></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-communities" class="view">
+        <div class="view-head">
+          <div><span class="eyebrow">TEAMS</span><h1>Communities</h1></div>
+          <button class="primary small" data-view="creator">Eigene Community</button>
+        </div>
+        <article class="my-community card">
+          <div class="team-emblem purple large">N</div>
+          <div class="community-main">
+            <span class="verified-line">DEIN TEAM · TWITCH VERIFIZIERT ✓</span>
+            <h2>Team Nova</h2>
+            <p>Wir klicken bis der Kosmos aufgibt. 🌌 Live-Raids jeden Freitag.</p>
+            <div class="community-stats"><span><b>28,4K</b> Mitglieder</span><span><b>3,92B</b> Welten</span><span><b>18–3</b> Raids</span></div>
+          </div>
+          <button class="secondary">Community öffnen</button>
+        </article>
+        <div class="section-title"><h2>Alle Communities</h2><select><option>Nach Aktivität</option><option>Nach Welten</option><option>Nach Raid-Rang</option></select></div>
+        <div id="communityList" class="community-list"></div>
+      </section>
+
+      <section id="view-notifications" class="view">
+        <div class="view-head">
+          <div><span class="eyebrow">AKTIVITÄT</span><h1>Benachrichtigungen</h1></div>
+          <button id="markRead" class="text-btn">Alle als gelesen markieren</button>
+        </div>
+        <div class="activity-tabs">
+          <button class="chip active">Alle</button><button class="chip">@Mentions</button><button class="chip">Raids</button><button class="chip">Community</button>
+        </div>
+        <div id="notificationList" class="notification-list"></div>
+      </section>
+
+      <section id="view-messages" class="view messages-view">
+        <div class="view-head"><div><span class="eyebrow">DMs</span><h1>Nachrichten</h1></div><button class="icon-btn">＋</button></div>
+        <div class="messages-layout card">
+          <aside id="conversationList" class="conversation-list"></aside>
+          <section class="chat-panel">
+            <header id="chatHeader"></header>
+            <div id="chatMessages" class="chat-messages"></div>
+            <form id="chatForm" class="chat-input"><button type="button">＋</button><input id="chatText" placeholder="Nachricht schreiben …"><button type="submit" class="send-btn">➤</button></form>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-creator" class="view">
+        <div class="view-head">
+          <div><span class="eyebrow">CREATOR HUB</span><h1>Streamer Dashboard</h1></div>
+          <span class="status-pill">● Twitch verbunden</span>
+        </div>
+
+        <section class="creator-identity card">
+          <div class="creator-avatar-lg">SL</div>
+          <div><span class="verified-line">✓ TWITCH CREATOR</span><h2>SaschaWorlds</h2><p>Community Owner · #SASCHA · 6.842 Mitglieder</p></div>
+          <button class="secondary">Öffentliches Profil</button>
+        </section>
+
+        <div class="metric-grid">
+          <article class="metric card"><span>Community-Welten</span><strong>928,4M</strong><small>+14,2% diese Woche</small></article>
+          <article class="metric card"><span>Aktive Mitglieder</span><strong>3.291</strong><small>letzte 24h</small></article>
+          <article class="metric card"><span>Raid-Bilanz</span><strong>12–4</strong><small>#7 global</small></article>
+          <article class="metric card"><span>Neue Follower</span><strong>+842</strong><small>letzte 7 Tage</small></article>
+        </div>
+
+        <div class="creator-columns">
+          <section class="card dashboard-panel">
+            <div class="section-title"><h2>Stream Tools</h2></div>
+            <button class="tool-row"><span>◫</span><div><strong>OBS Battle Overlay</strong><small>Live-Punktestand, Lead Changes, Countdown</small></div><em>›</em></button>
+            <button class="tool-row"><span>⚡</span><div><strong>Community-Ziel</strong><small>Fortschrittsbalken für deinen Stream</small></div><em>›</em></button>
+            <button class="tool-row"><span>☠</span><div><strong>Boss Event</strong><small>Gemeinsamer Boss für deine Zuschauer</small></div><em>›</em></button>
+            <button class="tool-row"><span>⚔</span><div><strong>Raid starten</strong><small>Anderen Creator herausfordern</small></div><em>›</em></button>
+          </section>
+
+          <section class="card dashboard-panel">
+            <div class="section-title"><h2>Community verwalten</h2></div>
+            <label>Community-Name<input value="Team Sascha"></label>
+            <label>Community-Code<input value="SASCHA"></label>
+            <label>Beschreibung<textarea>Gemeinsam bauen wir das größte Universum.</textarea></label>
+            <div class="toggle-row"><span>Beitritt automatisch erlauben</span><button class="toggle on"><i></i></button></div>
+            <div class="toggle-row"><span>Raid-Anfragen erlauben</span><button class="toggle on"><i></i></button></div>
+            <button class="primary">Änderungen speichern</button>
+          </section>
+        </div>
+
+        <section class="card dashboard-panel moderation-panel">
+          <div class="section-title"><h2>Moderation & Sicherheit</h2><button>Alle Einstellungen</button></div>
+          <div class="mod-grid">
+            <button><strong>Wortfilter</strong><span>14 Begriffe blockiert</span></button>
+            <button><strong>Moderatoren</strong><span>5 Team-Mitglieder</span></button>
+            <button><strong>Reports</strong><span>3 offen</span></button>
+            <button><strong>Geblockte Nutzer</strong><span>12 Accounts</span></button>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-profile" class="view">
+        <div id="profileContent"></div>
+      </section>
+    </main>
+
+    <aside class="right-rail">
+      <div class="global-widget card">
+        <div><span>GLOBALE WELTEN</span><b>🌐 LIVE</b></div>
+        <strong id="prototypeWorlds">842.193.447</strong>
+        <button id="prototypeClick">+1 WELT</button>
+      </div>
+
+      <div class="side-search"><span>⌕</span><input id="globalSearch" placeholder="Weltenclicker durchsuchen"></div>
+
+      <section class="right-card card">
+        <div class="section-title"><h3>Gerade live</h3><button data-view="explore">Mehr</button></div>
+        <button class="live-now" data-profile="nova"><i class="avatar">N</i><span><strong>NovaNeko</strong><small>Team Nova · 12,4K</small></span><em>LIVE</em></button>
+        <button class="live-now" data-profile="ash"><i class="avatar">A</i><span><strong>AshenTV</strong><small>Ashen Army · 4,8K</small></span><em>LIVE</em></button>
+        <button class="live-now" data-profile="orb"><i class="avatar">O</i><span><strong>OrbitalJonas</strong><small>Orbital Crew · 2,1K</small></span><em>LIVE</em></button>
+      </section>
+
+      <section class="right-card card">
+        <div class="section-title"><h3>Für dich</h3></div>
+        <div id="suggestedUsers"></div>
+      </section>
+
+      <section class="right-card card">
+        <div class="section-title"><h3>Trends</h3></div>
+        <button class="side-trend"><span>1 · Weltenclicker</span><strong>#WorldWar</strong><small>18,2K Posts</small></button>
+        <button class="side-trend"><span>2 · Gaming</span><strong>#RoadTo1B</strong><small>4,4K Posts</small></button>
+        <button class="side-trend"><span>3 · Creator</span><strong>#BossRush</strong><small>6,1K Posts</small></button>
+      </section>
+
+      <footer class="right-footer"><a href="/agb.html">AGB</a><a href="/datenschutz.html">Datenschutz</a><a href="/impressum.html">Impressum</a><span>© Weltenclicker Prototype</span></footer>
+    </aside>
+  </div>
+
+  <nav class="mobile-nav">
+    <button class="active" data-view="home">⌂<span>Home</span></button>
+    <button data-view="explore">⌕<span>Suche</span></button>
+    <button data-view="raids">⚔<span>Raids</span></button>
+    <button data-view="communities">◎<span>Teams</span></button>
+    <button data-view="messages">✉<span>DMs</span></button>
+  </nav>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-modal-close></div>
+    <section class="modal-panel card">
+      <button class="modal-x" data-modal-close>×</button>
+      <div id="modalBody"></div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="/social-prototype.js"></script>
+</body>
+</html>
