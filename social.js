@@ -5,8 +5,9 @@ const SESSION_KEY="wc_session_id";
 const state={
   view:"home",feedMode:"for_you",me:null,settings:null,community:null,creator:null,
   feed:[],search:{profiles:[],communities:[]},communities:[],raids:[],notifications:[],
-  conversations:[],conversationId:null,messages:[],game:{ready:false,count:0,power:1,busy:false},
-  loading:false
+  conversations:[],conversationId:null,messages:[],profileData:null,profilePosts:[],
+  feedCache:new Map(),searchCache:new Map(),commentsCache:new Map(),messageCache:new Map(),
+  game:{ready:false,count:0,power:1,busy:false},loading:false,skipNextHomeRefresh:false
 };
 
 function getSessionId(){
@@ -93,7 +94,68 @@ async function navigate(view,opts={}){
 window.addEventListener("popstate",()=>{const v=location.hash.slice(1)||"home";navigate(v,{noHash:true})});
 
 async function loadFeed(mode=state.feedMode){
-  state.feedMode=mode;const d=await socialApi("feed",{mode,limit:40});state.feed=d.posts||[];return state.feed;
+  state.feedMode=mode;
+  const d=await socialApi("feed",{mode,limit:40});
+  const posts=d.posts||[];
+  state.feedCache.set(mode,posts);
+  if(state.feedMode===mode)state.feed=posts;
+  return posts;
+}
+function cachedFeed(mode=state.feedMode){return state.feedCache.get(mode)||[]}
+function paintFeed(posts,el=$("#feed")){
+  if(!el)return;
+  el.innerHTML=posts.length?posts.map(postHtml).join(""):empty(
+    state.feedMode==="live"?"Niemand ist gerade live":"Noch keine Beiträge",
+    state.feedMode==="following"?"Folge zuerst einigen Accounts.":"Veröffentliche den ersten Beitrag."
+  );
+  bindPostActions(el);
+}
+function forEachPostCopy(id,fn){
+  const seen=new Set();
+  const pools=[state.feed,state.profilePosts,...state.feedCache.values()];
+  for(const list of pools)for(const p of list||[])if(p?.id===id&&!seen.has(p)){seen.add(p);fn(p)}
+}
+function findPost(id){
+  let found=null;forEachPostCopy(id,p=>{if(!found)found=p});return found
+}
+function repaintPost(id){
+  const p=findPost(id);if(!p)return;
+  document.querySelectorAll('[data-post="'+id+'"]').forEach(old=>{
+    const wrap=document.createElement("div");wrap.innerHTML=postHtml(p);const fresh=wrap.firstElementChild;
+    old.replaceWith(fresh);bindPostActions(fresh);
+  });
+}
+async function optimisticPostAction(kind,id){
+  const map={
+    like:["liked","like_count","toggle_like"],
+    save:["saved",null,"toggle_save"],
+    repost:["reposted","repost_count","toggle_repost"]
+  };
+  const [flag,countKey,action]=map[kind];
+  const p=findPost(id);if(!p)return;
+  const prev=Boolean(p[flag]),prevCount=countKey?Number(p[countKey]||0):0;
+  forEachPostCopy(id,x=>{x[flag]=!prev;if(countKey)x[countKey]=Math.max(0,Number(x[countKey]||0)+(prev?-1:1))});
+  repaintPost(id);
+  try{
+    const d=await socialApi(action,{postId:id});
+    forEachPostCopy(id,x=>{x[flag]=Boolean(d.active);if(countKey&&d.count!=null)x[countKey]=Number(d.count)});
+    repaintPost(id);
+    if(kind==="save")toast(d.active?"Gespeichert":"Speicherung entfernt");
+  }catch(e){
+    forEachPostCopy(id,x=>{x[flag]=prev;if(countKey)x[countKey]=prevCount});
+    repaintPost(id);toast("Aktion konnte nicht gespeichert werden");
+  }
+}
+async function optimisticPollVote(id,optionIndex){
+  const p=findPost(id);if(!p)return;
+  const prevVote=p.poll_vote,prevCounts=JSON.parse(JSON.stringify(p.poll_counts||[]));
+  const counts=new Map((p.poll_counts||[]).map(x=>[Number(x.option_index),Number(x.count||0)]));
+  if(prevVote!=null)counts.set(Number(prevVote),Math.max(0,(counts.get(Number(prevVote))||0)-1));
+  counts.set(optionIndex,(counts.get(optionIndex)||0)+1);
+  forEachPostCopy(id,x=>{x.poll_vote=optionIndex;x.poll_counts=[...counts.entries()].map(([option_index,count])=>({option_index,count}))});
+  repaintPost(id);
+  try{await socialApi("poll_vote",{postId:id,optionIndex})}
+  catch(e){forEachPostCopy(id,x=>{x.poll_vote=prevVote;x.poll_counts=prevCounts});repaintPost(id);toast("Stimme konnte nicht gespeichert werden")}
 }
 function pollHtml(p){
   if(p.post_type!=="poll"||!Array.isArray(p.poll_options))return "";
@@ -119,25 +181,34 @@ function postHtml(p){
     '<div class="post-actions"><button class="post-action" data-comments="'+p.id+'">◯ '+fmt(p.comment_count)+'</button><button class="post-action '+(p.reposted?"active-repost":"")+'" data-repost="'+p.id+'">↻ '+fmt(p.repost_count)+'</button><button class="post-action '+(p.liked?"active-like":"")+'" data-like="'+p.id+'">♥ '+fmt(p.like_count)+'</button><button class="post-action" data-share="'+p.id+'">⌁</button><button class="post-action '+(p.saved?"active-save":"")+'" data-save="'+p.id+'">▱</button></div></div></article>';
 }
 function bindPostActions(root=document){
-  $$("[data-profile]",root).forEach(b=>b.onclick=()=>navigate("profile",{handle:b.dataset.profile}));
-  $$("[data-like]",root).forEach(b=>b.onclick=async()=>{await socialApi("toggle_like",{postId:b.dataset.like});await refreshCurrentFeed()});
-  $$("[data-save]",root).forEach(b=>b.onclick=async()=>{const d=await socialApi("toggle_save",{postId:b.dataset.save});toast(d.active?"Gespeichert":"Speicherung entfernt");await refreshCurrentFeed()});
-  $$("[data-repost]",root).forEach(b=>b.onclick=async()=>{await socialApi("toggle_repost",{postId:b.dataset.repost});await refreshCurrentFeed()});
-  $$("[data-comments]",root).forEach(b=>b.onclick=()=>openComments(b.dataset.comments));
-  $$("[data-post-menu]",root).forEach(b=>b.onclick=()=>openPostMenu(b.dataset.postMenu));
-  $$("[data-share]",root).forEach(b=>b.onclick=async()=>{const url=location.origin+"/social.html#post="+b.dataset.share;try{await navigator.clipboard.writeText(url);toast("Post-Link kopiert")}catch{toast(url)}});
-  $$("[data-poll-post]",root).forEach(b=>b.onclick=async()=>{await socialApi("poll_vote",{postId:b.dataset.pollPost,optionIndex:Number(b.dataset.pollOption)});await refreshCurrentFeed()});
+  $("[data-profile]",root).forEach(b=>b.onclick=()=>navigate("profile",{handle:b.dataset.profile}));
+  $("[data-like]",root).forEach(b=>b.onclick=()=>optimisticPostAction("like",b.dataset.like));
+  $("[data-save]",root).forEach(b=>b.onclick=()=>optimisticPostAction("save",b.dataset.save));
+  $("[data-repost]",root).forEach(b=>b.onclick=()=>optimisticPostAction("repost",b.dataset.repost));
+  $("[data-comments]",root).forEach(b=>b.onclick=()=>openComments(b.dataset.comments));
+  $("[data-post-menu]",root).forEach(b=>b.onclick=()=>openPostMenu(b.dataset.postMenu));
+  $("[data-share]",root).forEach(b=>b.onclick=async()=>{const url=location.origin+"/social.html#post="+b.dataset.share;try{await navigator.clipboard.writeText(url);toast("Post-Link kopiert")}catch{toast(url)}});
+  $("[data-poll-post]",root).forEach(b=>b.onclick=()=>optimisticPollVote(b.dataset.pollPost,Number(b.dataset.pollOption)));
 }
 async function refreshCurrentFeed(){
   if(state.view==="home"){await loadFeed();const el=$("#feed");if(el){el.innerHTML=state.feed.length?state.feed.map(postHtml).join(""):empty("Noch keine Beiträge","Folge Creatorn oder veröffentliche den ersten Post.");bindPostActions(el)}}
   else if(state.view==="profile")await navigate("profile",{handle:state.currentProfile,noHash:true});
 }
 async function renderHome(){
+  const initial=cachedFeed(state.feedMode);
+  state.feed=initial;
   $("#page").innerHTML=pageHead("SOCIAL HUB","Home",'<div class="tabs"><button class="tab '+(state.feedMode==="for_you"?"active":"")+'" data-feed="for_you">Für dich</button><button class="tab '+(state.feedMode==="following"?"active":"")+'" data-feed="following">Folge ich</button><button class="tab '+(state.feedMode==="live"?"active":"")+'" data-feed="live">Live</button></div>')+
-    '<section class="composer card">'+avatar(state.me)+'<button id="composerShortcut" class="fake-input">Teile einen Meilenstein, Raid oder Gedanken …</button><button id="composerPlus" class="icon-button">＋</button></section><div id="feed" class="feed">'+loading("Feed wird geladen …")+'</div>';
-  $$("[data-feed]").forEach(b=>b.onclick=async()=>{state.feedMode=b.dataset.feed;$$("[data-feed]").forEach(x=>x.classList.toggle("active",x===b));$("#feed").innerHTML=loading();await loadFeed();$("#feed").innerHTML=state.feed.length?state.feed.map(postHtml).join(""):empty(state.feedMode==="live"?"Niemand ist gerade live":"Noch nichts hier",state.feedMode==="following"?"Folge zuerst einigen Accounts.":"Veröffentliche den ersten Beitrag.");bindPostActions($("#feed"))});
+    '<section class="composer card">'+avatar(state.me)+'<button id="composerShortcut" class="fake-input">Teile einen Meilenstein, Raid oder Gedanken …</button><button id="composerPlus" class="icon-button">＋</button></section><div id="feed" class="feed">'+(initial.length?initial.map(postHtml).join(""):loading("Feed wird geladen …"))+'</div>';
+  if(initial.length)bindPostActions($("#feed"));
+  $("[data-feed]").forEach(b=>b.onclick=async()=>{
+    const mode=b.dataset.feed;state.feedMode=mode;$("[data-feed]").forEach(x=>x.classList.toggle("active",x===b));
+    const cached=cachedFeed(mode);state.feed=cached;
+    if(cached.length)paintFeed(cached);else $("#feed").innerHTML=loading();
+    try{const posts=await loadFeed(mode);if(state.view==="home"&&state.feedMode===mode)paintFeed(posts)}catch(e){if(!cached.length)$("#feed").innerHTML=empty("Feed nicht erreichbar","Bitte versuche es gleich erneut.")}
+  });
   $("#composerShortcut").onclick=openComposer;$("#composerPlus").onclick=openComposer;
-  await loadFeed();$("#feed").innerHTML=state.feed.length?state.feed.map(postHtml).join(""):empty("Noch keine Beiträge","Veröffentliche den ersten Post.");bindPostActions($("#feed"));
+  if(state.skipNextHomeRefresh){state.skipNextHomeRefresh=false;return}
+  try{const posts=await loadFeed(state.feedMode);if(state.view==="home")paintFeed(posts)}catch(e){if(!initial.length)$("#feed").innerHTML=empty("Feed nicht erreichbar","Bitte versuche es gleich erneut.")}
 }
 
 function composeModal(){
@@ -159,18 +230,52 @@ function composeModal(){
     const payload={postType:type,body:body.value.trim()};
     if(type==="image"){if(!mediaUrl){toast("Bitte erst ein Bild hochladen");return}payload.mediaUrl=mediaUrl}
     if(type==="poll")payload.pollOptions=[1,2,3,4].map(i=>$("#poll"+i)?.value.trim()).filter(Boolean);
-    try{$("#publishPost").disabled=true;await socialApi("create_post",payload);closeModal();toast("Beitrag veröffentlicht");state.feedMode="for_you";await navigate("home",{noHash:true})}catch(e){toast(e.message)}finally{if($("#publishPost"))$("#publishPost").disabled=false}
+    if(type==="text"&&!payload.body){toast("Schreib zuerst etwas");return}
+    const temp={
+      id:"temp-"+Date.now(),player_id:state.me.player_id,post_type:type,body:payload.body||"",media_url:payload.mediaUrl||null,
+      poll_options:payload.pollOptions||null,poll_counts:[],poll_vote:null,created_at:new Date().toISOString(),author:state.me,
+      like_count:0,comment_count:0,repost_count:0,liked:false,saved:false,reposted:false
+    };
+    const current=state.feedCache.get("for_you")||[];state.feedCache.set("for_you",[temp,...current]);state.feedMode="for_you";state.feed=state.feedCache.get("for_you");
+    state.skipNextHomeRefresh=true;closeModal();navigate("home",{noHash:true});toast("Beitrag veröffentlicht");
+    try{
+      const d=await socialApi("create_post",payload);
+      for(const [mode,list] of state.feedCache.entries())state.feedCache.set(mode,list.map(p=>p.id===temp.id?{...temp,...d.post,id:d.post.id,author:state.me}:p));
+      state.feed=state.feedCache.get(state.feedMode)||state.feed;
+      if(state.view==="home")paintFeed(state.feed);
+    }catch(e){
+      for(const [mode,list] of state.feedCache.entries())state.feedCache.set(mode,list.filter(p=>p.id!==temp.id));
+      state.feed=state.feedCache.get(state.feedMode)||[];if(state.view==="home")paintFeed(state.feed);toast("Beitrag konnte nicht gespeichert werden")
+    }
   };
 }
 function openComposer(){composeModal()}
 
+function paintComments(postId){
+  const list=state.commentsCache.get(postId)||[],el=$("#commentList");if(!el)return;
+  el.innerHTML=list.length?'<div class="comment-list">'+list.map(c=>'<div class="comment">'+avatar(c.author)+'<div><p><strong>'+esc(c.author?.display_name||c.author?.handle)+'</strong><br>'+esc(c.body)+'</p><small>'+ago(c.created_at)+'</small></div></div>').join("")+'</div>':empty("Noch keine Kommentare","Sei die erste Person, die antwortet.");
+}
 async function openComments(postId){
-  openModal('<span class="eyebrow">THREAD</span><h2>Kommentare</h2><div id="commentList">'+loading()+'</div><div class="modal-form" style="margin-top:10px"><textarea id="commentText" maxlength="300" placeholder="Antwort schreiben …"></textarea><button id="sendComment" class="primary" style="padding:9px">KOMMENTIEREN</button></div>');
-  const load=async()=>{const d=await socialApi("comments",{postId});$("#commentList").innerHTML=(d.comments||[]).length?'<div class="comment-list">'+d.comments.map(c=>'<div class="comment">'+avatar(c.author)+'<div><p><strong>'+esc(c.author?.display_name||c.author?.handle)+'</strong><br>'+esc(c.body)+'</p><small>'+ago(c.created_at)+'</small></div></div>').join("")+'</div>':empty("Noch keine Kommentare","Sei die erste Person, die antwortet.")};
-  await load();$("#sendComment").onclick=async()=>{const text=$("#commentText").value.trim();if(!text)return;await socialApi("create_comment",{postId,body:text});$("#commentText").value="";await load();await refreshCurrentFeed()}
+  const cached=state.commentsCache.get(postId);
+  openModal('<span class="eyebrow">THREAD</span><h2>Kommentare</h2><div id="commentList">'+(cached?"":loading())+'</div><div class="modal-form" style="margin-top:10px"><textarea id="commentText" maxlength="300" placeholder="Antwort schreiben …"></textarea><button id="sendComment" class="primary" style="padding:9px">KOMMENTIEREN</button></div>');
+  if(cached)paintComments(postId);
+  socialApi("comments",{postId}).then(d=>{state.commentsCache.set(postId,d.comments||[]);if(!$("#modal").hidden)paintComments(postId)}).catch(()=>{if(!cached&&$("#commentList"))$("#commentList").innerHTML=empty("Kommentare nicht erreichbar","Bitte erneut versuchen.")});
+  $("#sendComment").onclick=async()=>{
+    const text=$("#commentText").value.trim();if(!text)return;$("#commentText").value="";
+    const temp={id:"temp-"+Date.now(),post_id:postId,player_id:state.me.player_id,body:text,created_at:new Date().toISOString(),author:state.me};
+    const list=state.commentsCache.get(postId)||[];state.commentsCache.set(postId,[...list,temp]);paintComments(postId);
+    forEachPostCopy(postId,p=>p.comment_count=Number(p.comment_count||0)+1);repaintPost(postId);
+    try{
+      const d=await socialApi("create_comment",{postId,body:text});
+      const now=state.commentsCache.get(postId)||[];state.commentsCache.set(postId,now.map(c=>c.id===temp.id?{...d.comment,author:state.me}:c));paintComments(postId)
+    }catch(e){
+      state.commentsCache.set(postId,(state.commentsCache.get(postId)||[]).filter(c=>c.id!==temp.id));
+      forEachPostCopy(postId,p=>p.comment_count=Math.max(0,Number(p.comment_count||0)-1));paintComments(postId);repaintPost(postId);toast("Kommentar konnte nicht gespeichert werden")
+    }
+  }
 }
 async function openPostMenu(postId){
-  const p=(state.feed||[]).find(x=>x.id===postId);
+  const p=findPost(postId);
   const own=p&&state.me&&p.player_id===state.me.player_id;
   if(own){
     openModal('<span class="eyebrow">DEIN POST</span><h2>Beitrag verwalten</h2><button id="deletePost" class="secondary danger">Beitrag löschen</button>');
@@ -189,8 +294,13 @@ function openReport(postId){
 
 async function renderExplore(query=""){
   $("#page").innerHTML=pageHead("DISCOVERY","Entdecken")+'<label class="search-box"><span>⌕</span><input id="exploreQuery" value="'+esc(query)+'" placeholder="Creator oder Community suchen"></label><section class="section"><div class="section-head"><h2>Accounts</h2></div><div id="profileResults" class="result-grid">'+loading()+'</div></section><section class="section"><div class="section-head"><h2>Communities</h2></div><div id="communityResults" class="community-grid">'+loading()+'</div></section>';
-  const run=async(q)=>{const d=await socialApi("search",{query:q});state.search=d;renderSearchResults()};
-  let timer;$("#exploreQuery").oninput=e=>{clearTimeout(timer);timer=setTimeout(()=>run(e.target.value.trim()),220)};await run(query);
+  const run=async(q)=>{
+    const key=q.toLowerCase();
+    if(state.searchCache.has(key)){state.search=state.searchCache.get(key);renderSearchResults()}
+    try{const d=await socialApi("search",{query:q});state.search=d;state.searchCache.set(key,d);renderSearchResults()}catch(e){if(!state.searchCache.has(key))toast("Suche konnte nicht geladen werden")}
+  };
+  let timer;$("#exploreQuery").oninput=e=>{clearTimeout(timer);timer=setTimeout(()=>run(e.target.value.trim()),120)};
+  await run(query);
 }
 function profileCard(p){
   const self=state.me?.player_id===p.player_id;
@@ -204,18 +314,48 @@ function renderSearchResults(){
   $("#profileResults").innerHTML=(state.search.profiles||[]).length?state.search.profiles.map(profileCard).join(""):empty("Keine Accounts gefunden","Probiere einen anderen Suchbegriff.");
   $("#communityResults").innerHTML=(state.search.communities||[]).length?state.search.communities.map(communityCard).join(""):empty("Keine Communities gefunden","Erstelle im Creator Hub die erste Community.");
   $$("[data-open-profile]").forEach(b=>b.onclick=()=>navigate("profile",{handle:b.dataset.openProfile}));
-  $$("[data-follow]").forEach(b=>b.onclick=async()=>{const d=await socialApi("toggle_follow",{handle:b.dataset.follow});toast(d.active?"Du folgst dem Account":"Nicht mehr gefolgt");await renderExplore($("#exploreQuery")?.value||"")});
-  $$("[data-community]").forEach(b=>b.onclick=async()=>{const code=b.dataset.community;if(state.community?.code?.toLowerCase()===code.toLowerCase())await socialApi("leave_community");else await socialApi("join_community",{code});await bootstrap();toast("Community aktualisiert");await renderExplore($("#exploreQuery")?.value||"")});
+  $("[data-follow]").forEach(b=>b.onclick=()=>optimisticSearchFollow(b.dataset.follow,b));
+  $("[data-community]").forEach(b=>b.onclick=()=>optimisticCommunityChange(b.dataset.community,b));
+}
+async function optimisticSearchFollow(handle,button){
+  const p=(state.search.profiles||[]).find(x=>x.handle.toLowerCase()===handle.toLowerCase());if(!p)return;
+  const prev=Boolean(p.following);p.following=!prev;button.classList.toggle("active",p.following);button.textContent=p.following?"Folge ich":"Folgen";
+  try{const d=await socialApi("toggle_follow",{handle});p.following=Boolean(d.active);button.classList.toggle("active",p.following);button.textContent=p.following?"Folge ich":"Folgen"}
+  catch(e){p.following=prev;button.classList.toggle("active",prev);button.textContent=prev?"Folge ich":"Folgen";toast("Follow konnte nicht gespeichert werden")}
+}
+async function optimisticCommunityChange(code,button){
+  const previous=state.community;
+  const leaving=previous?.code?.toLowerCase()===code.toLowerCase();
+  const target=[...(state.search.communities||[]),...(state.communities||[])].find(x=>x.code?.toLowerCase()===code.toLowerCase());
+  state.community=leaving?null:(target||{code,name:code});
+  renderSearchResults();
+  try{
+    if(leaving)await socialApi("leave_community");else await socialApi("join_community",{code});
+    bootstrap().catch(()=>{});
+    toast(leaving?"Community verlassen":"Community beigetreten");
+  }catch(e){state.community=previous;renderSearchResults();toast("Community konnte nicht aktualisiert werden")}
 }
 
 async function renderProfile(handle){
-  state.currentProfile=handle;$("#page").innerHTML=loading("Profil wird geladen …");
-  const d=await socialApi("profile",{handle});const p=d.profile,own=p.player_id===state.me.player_id;
+  state.currentProfile=handle;
+  const cached=state.profileData?.handle?.toLowerCase()===String(handle).toLowerCase()?{profile:state.profileData,posts:state.profilePosts}:null;
+  if(!cached)$("#page").innerHTML=loading("Profil wird geladen …");
+  const d=cached||await socialApi("profile",{handle});const p=d.profile,own=p.player_id===state.me.player_id;
+  state.profileData=p;state.profilePosts=d.posts||[];
   $("#page").innerHTML=pageHead("PROFIL",p.display_name)+
     '<article class="profile-hero card"><div class="profile-banner" '+(p.banner_url?'style="background-image:url(\''+esc(p.banner_url)+'\')"':'')+'></div><div class="profile-info">'+avatar(p,"avatar profile-main-avatar")+
     '<div class="profile-title"><div><h2>'+esc(p.display_name)+' '+(p.is_verified?'<span class="verified">✓</span>':'')+(p.is_live?'<span class="live-dot"> ● LIVE</span>':'')+'</h2><small>@'+esc(p.handle)+'</small></div>'+(own?'<button id="editProfile" class="secondary">Profil bearbeiten</button>':'<button id="profileFollow" class="follow '+(p.viewer_follows?"active":"")+'">'+(p.viewer_follows?"Folge ich":"Folgen")+'</button>')+'</div>'+
-    '<p class="bio">'+esc(p.bio||"Noch keine Bio.")+'</p><div class="stats"><span><b>'+fmt(p.followers)+'</b> Follower</span><span><b>'+fmt(p.following_count)+'</b> folgt</span><span><b>'+fmt(p.post_count)+'</b> Posts</span><span><b>'+fmt(p.personal_worlds)+'</b> Welten</span></div></div></article><div id="profileFeed" class="feed">'+((d.posts||[]).length?d.posts.map(postHtml).join(""):empty("Noch keine Posts","Hier wurde noch nichts veröffentlicht."))+'</div>';
-  bindPostActions($("#profileFeed"));if(own)$("#editProfile").onclick=()=>openEditProfile(p);else $("#profileFollow").onclick=async()=>{await socialApi("toggle_follow",{handle:p.handle});await renderProfile(handle)};
+    '<p class="bio">'+esc(p.bio||"Noch keine Bio.")+'</p><div class="stats"><span><b id="profileFollowerCount">'+fmt(p.followers)+'</b> Follower</span><span><b>'+fmt(p.following_count)+'</b> folgt</span><span><b>'+fmt(p.post_count)+'</b> Posts</span><span><b>'+fmt(p.personal_worlds)+'</b> Welten</span></div></div></article><div id="profileFeed" class="feed">'+((d.posts||[]).length?d.posts.map(postHtml).join(""):empty("Noch keine Posts","Hier wurde noch nichts veröffentlicht."))+'</div>';
+  bindPostActions($("#profileFeed"));if(own)$("#editProfile").onclick=()=>openEditProfile(p);else $("#profileFollow").onclick=()=>optimisticProfileFollow(p);
+}
+async function optimisticProfileFollow(p){
+  const button=$("#profileFollow");if(!button)return;
+  const prev=Boolean(p.viewer_follows),prevFollowers=Number(p.followers||0);
+  p.viewer_follows=!prev;p.followers=Math.max(0,prevFollowers+(prev?-1:1));
+  button.classList.toggle("active",p.viewer_follows);button.textContent=p.viewer_follows?"Folge ich":"Folgen";
+  if($("#profileFollowerCount"))$("#profileFollowerCount").textContent=fmt(p.followers);
+  try{const d=await socialApi("toggle_follow",{handle:p.handle});p.viewer_follows=Boolean(d.active);if(d.followers!=null)p.followers=Number(d.followers);button.classList.toggle("active",p.viewer_follows);button.textContent=p.viewer_follows?"Folge ich":"Folgen";if($("#profileFollowerCount"))$("#profileFollowerCount").textContent=fmt(p.followers)}
+  catch(e){p.viewer_follows=prev;p.followers=prevFollowers;button.classList.toggle("active",prev);button.textContent=prev?"Folge ich":"Folgen";if($("#profileFollowerCount"))$("#profileFollowerCount").textContent=fmt(prevFollowers);toast("Follow konnte nicht gespeichert werden")}
 }
 function openEditProfile(p){
   openModal('<span class="eyebrow">PROFIL</span><h2>Profil bearbeiten</h2><div class="modal-form"><label>Handle<input id="editHandle" maxlength="24" value="'+esc(p.handle)+'"></label><label>Anzeigename<input id="editDisplay" maxlength="40" value="'+esc(p.display_name)+'"></label><label>Bio<textarea id="editBio" maxlength="180">'+esc(p.bio||"")+'</textarea></label><label>Profilbild<input id="editAvatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></label><label>Banner<input id="editBannerFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></label><button id="saveProfile" class="primary" style="padding:9px">SPEICHERN</button></div>');
@@ -226,9 +366,26 @@ function openEditProfile(p){
 
 async function renderCommunities(){
   $("#page").innerHTML=pageHead("TEAMS","Communities",'<button data-view="creator" class="primary" style="padding:8px 11px;font-size:8px">CREATOR HUB</button>')+'<section class="section">'+(state.community?'<article class="community-card card" style="margin-bottom:12px"><span class="eyebrow">DEIN TEAM</span><h2>'+esc(state.community.name)+'</h2><p>'+esc(state.community.description||"")+'</p><div class="stats"><span><b>#'+esc(state.community.code)+'</b> Code</span><span><b>'+fmt(state.community.total_worlds)+'</b> Welten</span></div><div class="modal-actions"><button id="leaveCurrentCommunity" class="secondary danger">Community verlassen</button></div></article>':'')+'<div id="communityGrid" class="community-grid">'+loading()+'</div></section>';
-  bindNav($("#page"));const d=await socialApi("communities");state.communities=d.communities||[];$("#communityGrid").innerHTML=state.communities.length?state.communities.map(communityCard).join(""):empty("Noch keine Communities","Im Creator Hub kannst du die erste erstellen.");
-  $$("[data-community]").forEach(b=>b.onclick=async()=>{if(state.community?.code?.toLowerCase()===b.dataset.community.toLowerCase())await socialApi("leave_community");else await socialApi("join_community",{code:b.dataset.community});await bootstrap();await renderCommunities()});
-  if($("#leaveCurrentCommunity"))$("#leaveCurrentCommunity").onclick=async()=>{await socialApi("leave_community");await bootstrap();await renderCommunities()};
+  bindNav($("#page"));
+  if(state.communities.length)$("#communityGrid").innerHTML=state.communities.map(communityCard).join("");
+  const d=await socialApi("communities");state.communities=d.communities||[];$("#communityGrid").innerHTML=state.communities.length?state.communities.map(communityCard).join(""):empty("Noch keine Communities","Im Creator Hub kannst du die erste erstellen.");
+  $("[data-community]").forEach(b=>b.onclick=()=>optimisticCommunityPageChange(b.dataset.community));
+  if($("#leaveCurrentCommunity"))$("#leaveCurrentCommunity").onclick=()=>optimisticCommunityPageChange(state.community.code);
+}
+async function optimisticCommunityPageChange(code){
+  const previous=state.community,leaving=previous?.code?.toLowerCase()===code.toLowerCase();
+  const target=state.communities.find(x=>x.code?.toLowerCase()===code.toLowerCase());
+  state.community=leaving?null:(target||{code,name:code});
+  document.querySelectorAll("[data-community]").forEach(btn=>{
+    const on=state.community?.code?.toLowerCase()===btn.dataset.community?.toLowerCase();
+    btn.classList.toggle("active",Boolean(on));btn.textContent=on?"Verlassen":"Beitreten";
+  });
+  if($("#leaveCurrentCommunity"))$("#leaveCurrentCommunity").disabled=true;
+  try{
+    if(leaving)await socialApi("leave_community");else await socialApi("join_community",{code});
+    bootstrap().catch(()=>{});toast(leaving?"Community verlassen":"Community beigetreten");
+    await renderCommunities();
+  }catch(e){state.community=previous;toast("Community konnte nicht aktualisiert werden");await renderCommunities()}
 }
 
 function raidStatus(r){if(r.status==="live")return "LIVE";if(r.status==="accepted")return "GEPLANT";if(r.status==="pending")return "ANFRAGE";if(r.status==="completed")return "BEENDET";return r.status.toUpperCase()}
@@ -280,6 +437,7 @@ async function updateNotificationBadge(){
 async function renderMessages(){
   $("#page").innerHTML=pageHead("DIREKTNACHRICHTEN","Nachrichten",'<button id="newConversation" class="primary" style="padding:8px 11px;font-size:8px">+ NEUE NACHRICHT</button>')+'<section class="messages-shell card"><aside id="conversationList" class="conversation-list">'+loading()+'</aside><section class="chat"><header id="chatHeader">Wähle eine Unterhaltung</header><div id="chatMessages" class="chat-messages"></div><form id="chatForm" class="chat-form"><input id="messageInput" maxlength="1000" placeholder="Nachricht schreiben …" disabled><button class="primary" disabled>➤</button></form></section></section>';
   $("#newConversation").onclick=openNewConversation;
+  if(state.conversations.length)renderConversationList();
   const d=await socialApi("conversations");state.conversations=d.conversations||[];renderConversationList();
   if(!state.conversationId&&state.conversations[0])state.conversationId=state.conversations[0].id;
   if(state.conversationId)await loadConversation(state.conversationId);
@@ -288,13 +446,29 @@ function renderConversationList(){
   $("#conversationList").innerHTML=state.conversations.length?state.conversations.map(c=>{const p=c.participants?.[0]||{};return '<button class="conversation '+(c.id===state.conversationId?"active":"")+'" data-conversation="'+c.id+'">'+avatar(p)+'<span><strong>'+esc(p.display_name||p.handle||"Unterhaltung")+'</strong><small>'+esc(c.last_message?.body||"Noch keine Nachricht")+'</small></span></button>'}).join(""):empty("Keine Nachrichten","Starte eine Unterhaltung über einen Handle.");
   $$("[data-conversation]").forEach(b=>b.onclick=async()=>{state.conversationId=b.dataset.conversation;renderConversationList();await loadConversation(state.conversationId)});
 }
-async function loadConversation(id){
-  const d=await socialApi("conversation",{conversationId:id});state.messages=d.messages||[];
-  const conv=state.conversations.find(c=>c.id===id),p=conv?.participants?.[0]||{};
+function paintConversation(id){
+  const conv=state.conversations.find(c=>c.id===id),p=conv?.participants?.[0]||{},messages=state.messageCache.get(id)||[];
   $("#chatHeader").innerHTML='<strong>'+esc(p.display_name||p.handle||"Unterhaltung")+'</strong>'+(p.handle?' <small>@'+esc(p.handle)+'</small>':'');
-  $("#chatMessages").innerHTML=state.messages.length?state.messages.map(m=>'<div class="bubble '+(m.sender_id===state.me.player_id?"me":"")+'">'+esc(m.body)+'</div>').join(""):empty("Noch leer","Schreib die erste Nachricht.");
+  $("#chatMessages").innerHTML=messages.length?messages.map(m=>'<div class="bubble '+(m.sender_id===state.me.player_id?"me":"")+'">'+esc(m.body)+'</div>').join(""):empty("Noch leer","Schreib die erste Nachricht.");
   $("#messageInput").disabled=false;$("#chatForm button").disabled=false;setTimeout(()=>{$("#chatMessages").scrollTop=$("#chatMessages").scrollHeight},0);
-  $("#chatForm").onsubmit=async e=>{e.preventDefault();const text=$("#messageInput").value.trim();if(!text)return;$("#messageInput").value="";await socialApi("send_message",{conversationId:id,body:text});await loadConversation(id);const x=await socialApi("conversations");state.conversations=x.conversations||[];renderConversationList()}
+}
+async function loadConversation(id){
+  if(state.messageCache.has(id))paintConversation(id);
+  const d=await socialApi("conversation",{conversationId:id});state.messages=d.messages||[];state.messageCache.set(id,state.messages);paintConversation(id);
+  $("#chatForm").onsubmit=async e=>{
+    e.preventDefault();const text=$("#messageInput").value.trim();if(!text)return;$("#messageInput").value="";
+    const temp={id:"temp-"+Date.now(),conversation_id:id,sender_id:state.me.player_id,body:text,created_at:new Date().toISOString()};
+    const list=state.messageCache.get(id)||[];state.messageCache.set(id,[...list,temp]);
+    const conv=state.conversations.find(c=>c.id===id);if(conv)conv.last_message=temp;
+    paintConversation(id);renderConversationList();
+    try{
+      const sent=await socialApi("send_message",{conversationId:id,body:text});
+      state.messageCache.set(id,(state.messageCache.get(id)||[]).map(m=>m.id===temp.id?sent.message:m));
+      const c=state.conversations.find(x=>x.id===id);if(c)c.last_message=sent.message;paintConversation(id);renderConversationList()
+    }catch(err){
+      state.messageCache.set(id,(state.messageCache.get(id)||[]).filter(m=>m.id!==temp.id));paintConversation(id);toast("Nachricht konnte nicht gesendet werden")
+    }
+  }
 }
 function openNewConversation(){
   openModal('<span class="eyebrow">DM</span><h2>Neue Nachricht</h2><div class="modal-form"><label>Handle<input id="dmHandle" placeholder="Benutzername"></label><label>Nachricht<textarea id="dmText" maxlength="1000"></textarea></label><button id="startDm" class="primary" style="padding:9px">SENDEN</button></div>');
@@ -367,7 +541,7 @@ async function clickGlobal(){
 }
 function accountMenu(){
   openModal('<span class="eyebrow">ACCOUNT</span><h2>'+esc(state.me.display_name)+'</h2><div class="modal-form"><button id="accountProfile" class="secondary">Profil öffnen</button><button id="savedPosts" class="secondary">Gespeicherte Posts</button><button id="privacySettings" class="secondary">Social-Privatsphäre</button><button data-view="creator" class="secondary">Creator Hub</button></div>');bindNav($("#modalBody"));
-  $("#accountProfile").onclick=()=>{closeModal();navigate("profile",{handle:state.me.handle})};$("#savedPosts").onclick=async()=>{const d=await socialApi("feed",{mode:"saved",limit:50});openModal('<span class="eyebrow">GESPEICHERT</span><h2>Deine gespeicherten Posts</h2><div class="feed">'+((d.posts||[]).length?d.posts.map(postHtml).join(""):empty("Noch nichts gespeichert","Nutze das Lesezeichen unter einem Beitrag."))+'</div>');bindPostActions($("#modalBody"))};$("#privacySettings").onclick=openPrivacy
+  $("#accountProfile").onclick=()=>{closeModal();navigate("profile",{handle:state.me.handle})};$("#savedPosts").onclick=async()=>{const d=await socialApi("feed",{mode:"saved",limit:50});state.feedCache.set("saved",d.posts||[]);openModal('<span class="eyebrow">GESPEICHERT</span><h2>Deine gespeicherten Posts</h2><div class="feed">'+((d.posts||[]).length?d.posts.map(postHtml).join(""):empty("Noch nichts gespeichert","Nutze das Lesezeichen unter einem Beitrag."))+'</div>');bindPostActions($("#modalBody"))};$("#privacySettings").onclick=openPrivacy
 }
 function openPrivacy(){
   openModal('<span class="eyebrow">PRIVATSPHÄRE</span><h2>Social-Einstellungen</h2><div class="modal-form"><label>Direktnachrichten<select id="dmPolicy"><option value="everyone">Alle</option><option value="following">Nur Accounts, denen ich folge</option><option value="none">Niemand</option></select></label><label>Mentions<select id="mentionPolicy"><option value="everyone">Alle</option><option value="following">Nur Accounts, denen ich folge</option></select></label><label><input id="activityVisible" type="checkbox"> Aktivitätsstatus sichtbar</label><button id="savePrivacy" class="primary" style="padding:9px">SPEICHERN</button></div>');
