@@ -1,1 +1,31 @@
-const KEY="wc_social_prototype_v3";const fmt=n=>new Intl.NumberFormat("de-DE").format(Math.floor(Number(n)||0));function load(){let s={};try{s=JSON.parse(localStorage.getItem(KEY)||"{}")}catch{}const a=18429210+Number(s.raidBonusA||0),b=17981443,total=a+b,p=total?a/total*100:50,left=Math.max(0,Number(s.raidEndsAt||0)-Date.now()),sec=Math.ceil(left/1000),m=Math.floor(sec/60),ss=sec%60;document.getElementById("a").textContent=fmt(a);document.getElementById("b").textContent=fmt(b);document.getElementById("meter").style.width=p+"%";document.getElementById("time").textContent=left?String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0"):"ENDE";document.getElementById("lead").innerHTML=(a>=b?"TEAM NOVA":"ASHEN ARMY")+" FÜHRT MIT <b>"+fmt(Math.abs(a-b))+"</b>";document.getElementById("contrib").textContent=s.raidJoined?"COMMUNITY-KLICKER AKTIV · DEIN BEITRAG "+fmt(s.raidContribution||0):""}window.addEventListener("storage",load);setInterval(load,500);load();
+const CONFIG=window.WELTENCLICKER_CONFIG||{};
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+const raidId=params.get("raid");
+const fmt=n=>new Intl.NumberFormat("de-DE").format(Math.floor(Number(n)||0));
+function escName(v){return String(v||"").slice(0,40)}
+async function load(){
+  try{
+    const r=await fetch(CONFIG.supabaseUrl+"/functions/v1/social-api",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":CONFIG.supabasePublishableKey},
+      body:JSON.stringify({action:"public_raid_state",raidId})
+    });
+    const d=await r.json();
+    if(!r.ok||!d.raid){$("state").textContent="KEIN AKTIVER RAID";$("state").classList.add("offline");return}
+    const x=d.raid,a=x.challenger||{},b=x.opponent||{};
+    $("state").classList.remove("offline");
+    $("state").textContent=(x.status==="live"?"● LIVE RAID":x.status.toUpperCase())+" · COMMUNITY VS COMMUNITY";
+    $("nameA").textContent=escName(a.name||"TEAM A");$("nameB").textContent=escName(b.name||"TEAM B");
+    $("codeA").textContent=a.code?"#"+a.code:"";$("codeB").textContent=b.code?"#"+b.code:"";
+    $("emblemA").textContent=(a.name||"A").charAt(0).toUpperCase();$("emblemB").textContent=(b.name||"B").charAt(0).toUpperCase();
+    const sa=Number(x.challenger_score||0),sb=Number(x.opponent_score||0),total=sa+sb;
+    $("scoreA").textContent=fmt(sa);$("scoreB").textContent=fmt(sb);$("meter").style.width=(total?sa/total*100:50)+"%";
+    const end=x.ends_at?new Date(x.ends_at).getTime():new Date(x.starts_at).getTime()+Number(x.duration_seconds||600)*1000;
+    const left=Math.max(0,end-Date.now()),sec=Math.ceil(left/1000),m=Math.floor(sec/60),s=sec%60;
+    $("time").textContent=x.status==="completed"?"ENDE":String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    if(sa===sb)$("lead").textContent="GLEICHSTAND";
+    else $("lead").innerHTML=(sa>sb?escName(a.name):escName(b.name))+" FÜHRT MIT <b>"+fmt(Math.abs(sa-sb))+"</b>";
+  }catch(e){$("state").textContent="VERBINDUNG UNTERBROCHEN";$("state").classList.add("offline")}
+}
+setInterval(load,2000);load();
