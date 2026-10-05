@@ -44,10 +44,10 @@ const baseCreators=[
 {id:"moss",name:"MossBoss",handle:"@mossboss",initial:"M",followers:"34K",team:"Moss Legion",live:false,bio:"Chill streams, cursed builds und zu viele Pflanzen."}
 ];
 const communities=[
-{id:"nova",name:"Team Nova",code:"NOVA",initial:"N",members:28400,worlds:"3,92B",rank:1,raid:"18–3",desc:"Schnell, laut und gefährlich."},
-{id:"ash",name:"Ashen Army",code:"ASHEN",initial:"A",members:23900,worlds:"3,71B",rank:2,raid:"17–4",desc:"Jeder Klick zählt. Keine Ausreden."},
-{id:"moss",name:"Moss Legion",code:"MOSS",initial:"M",members:15800,worlds:"2,88B",rank:3,raid:"15–6",desc:"Entspannt klicken, hart raiden."},
-{id:"orb",name:"Orbital Crew",code:"ORBIT",initial:"O",members:12100,worlds:"2,42B",rank:4,raid:"14–7",desc:"Bis zum nächsten Stern."}
+{id:"nova",name:"Team Nova",code:"NOVA",initial:"N",members:28400,worlds:"3,92B",worldsNum:3.92,rank:1,raid:"18–3",wins:18,desc:"Schnell, laut und gefährlich."},
+{id:"ash",name:"Ashen Army",code:"ASHEN",initial:"A",members:23900,worlds:"3,71B",worldsNum:3.71,rank:2,raid:"17–4",wins:17,desc:"Jeder Klick zählt. Keine Ausreden."},
+{id:"moss",name:"Moss Legion",code:"MOSS",initial:"M",members:15800,worlds:"2,88B",worldsNum:2.88,rank:3,raid:"15–6",wins:15,desc:"Entspannt klicken, hart raiden."},
+{id:"orb",name:"Orbital Crew",code:"ORBIT",initial:"O",members:12100,worlds:"2,42B",worldsNum:2.42,rank:4,raid:"14–7",wins:14,desc:"Bis zum nächsten Stern."}
 ];
 const basePosts=[
 {id:"p1",creator:"nova",time:"2 Min.",type:"clip",text:'DAS war gerade der knappste Lead-Change des Abends 😭 Team Nova, wir brauchen euch in 10 Minuten wieder. <a>#WorldWar</a> <a>#TeamNova</a>',likes:1832,comments:142,reposts:318,views:"44K"},
@@ -56,12 +56,12 @@ const basePosts=[
 {id:"p4",creator:"moss",time:"42 Min.",type:"quote",text:"Hot Take: Community-Bosse sollten stärker skalieren, wenn mehr Leute gleichzeitig online sind. Sonst schmelzen große Teams sie in Sekunden.",likes:511,comments:87,reposts:44,views:"9K"}
 ];
 const notificationSeed=[
-{icon:"⚔",text:"Team Nova hat eine Raid-Herausforderung von Ashen Army angenommen.",time:"vor 2 Min.",target:"raids"},
-{icon:"♥",text:"NovaNeko und 18 weitere Personen gefällt dein Beitrag.",time:"vor 11 Min.",target:"home"},
-{icon:"＋",text:"OrbitalJonas folgt dir jetzt.",time:"vor 26 Min.",target:"profile:orb"},
-{icon:"◎",text:"Deine Community hat den Meilenstein 900 Mio. Welten erreicht.",time:"vor 1 Std.",target:"creator"},
-{icon:"✦",text:"Du hast das Achievement „Veteran der 10. Ära“ freigeschaltet.",time:"vor 3 Std.",target:"profile:you"},
-{icon:"↻",text:"AshenTV hat deinen Beitrag repostet.",time:"gestern",target:"home"}
+{icon:"⚔",text:"Team Nova hat eine Raid-Herausforderung von Ashen Army angenommen.",time:"vor 2 Min.",target:"raids",cat:"raids"},
+{icon:"♥",text:"NovaNeko und 18 weitere Personen gefällt dein Beitrag.",time:"vor 11 Min.",target:"home",cat:"mentions"},
+{icon:"＋",text:"OrbitalJonas folgt dir jetzt.",time:"vor 26 Min.",target:"profile:orb",cat:"mentions"},
+{icon:"◎",text:"Deine Community hat den Meilenstein 900 Mio. Welten erreicht.",time:"vor 1 Std.",target:"creator",cat:"community"},
+{icon:"✦",text:"Du hast das Achievement „Veteran der 10. Ära“ freigeschaltet.",time:"vor 3 Std.",target:"profile:you",cat:"community"},
+{icon:"↻",text:"AshenTV hat deinen Beitrag repostet.",time:"gestern",target:"home",cat:"mentions"}
 ];
 const defaultConversations={
 nova:{name:"NovaNeko",initial:"N",preview:"Können wir Freitag 20 Uhr festmachen?",messages:[["them","Hey! GG beim Raid gestern 😄"],["me","GG, das Ende war komplett absurd."],["them","Können wir Freitag 20 Uhr festmachen?"]]},
@@ -136,9 +136,11 @@ function renderCreators(){
 function communityCard(c){return '<article class="community-card card" data-search="'+esc((c.name+" "+c.code).toLowerCase())+'"><div class="team-emblem '+(c.id==="ash"?"red":"purple")+'">'+c.initial+'</div><h3>'+esc(c.name)+' <span class="verified">✓</span></h3><p>#'+esc(c.code)+' · '+fmt(c.members)+' Mitglieder<br>'+esc(c.desc)+'</p><button class="join-btn '+(state.joined.has(c.id)?"joined":"")+'" data-join="'+c.id+'">'+(state.joined.has(c.id)?"Beigetreten":"Beitreten")+'</button></article>'}
 function renderCommunities(){
  const q=($("#exploreSearch")?.value||"").trim().toLowerCase();
- const list=communities.filter(c=>(c.name+" "+c.code+" "+c.desc).toLowerCase().includes(q));
+ const sort=$("#communitySort")?.value||"activity";
+ const ordered=[...communities].sort((a,b)=>sort==="worlds"?b.worldsNum-a.worldsNum:sort==="raids"?b.wins-a.wins:b.members-a.members);
+ const list=ordered.filter(c=>(c.name+" "+c.code+" "+c.desc).toLowerCase().includes(q));
  $("#communityGrid").innerHTML=list.length?list.map(communityCard).join(""):'<div class="explore-empty">Keine Communities gefunden.</div>';
- $("#communityList").innerHTML=communities.map(c=>'<article class="community-list-row card"><div class="team-emblem '+(c.id==="ash"?"red":"purple")+'">'+c.initial+'</div><div><strong>#'+c.rank+' · '+esc(c.name)+' <span class="verified">✓</span></strong><small>#'+esc(c.code)+' · '+fmt(c.members)+' Mitglieder · '+c.worlds+' Welten · '+c.raid+' Raids</small></div><button class="join-btn '+(state.joined.has(c.id)?"joined":"")+'" data-join="'+c.id+'">'+(state.joined.has(c.id)?"Beigetreten":"Beitreten")+'</button></article>').join("");
+ $("#communityList").innerHTML=ordered.map(c=>'<article class="community-list-row card"><div class="team-emblem '+(c.id==="ash"?"red":"purple")+'">'+c.initial+'</div><div><strong>#'+c.rank+' · '+esc(c.name)+' <span class="verified">✓</span></strong><small>#'+esc(c.code)+' · '+fmt(c.members)+' Mitglieder · '+c.worlds+' Welten · '+c.raid+' Raids</small></div><button class="join-btn '+(state.joined.has(c.id)?"joined":"")+'" data-join="'+c.id+'">'+(state.joined.has(c.id)?"Beigetreten":"Beitreten")+'</button></article>').join("");
  $$("[data-join]").forEach(b=>b.onclick=()=>{toggleSet(state.joined,b.dataset.join);renderCommunities();toast(state.joined.has(b.dataset.join)?"Community beigetreten":"Community verlassen")});
 }
 function renderSuggested(){
@@ -166,7 +168,8 @@ function renderExplore(){
 }
 
 function renderNotifications(){
- $("#notificationList").innerHTML=notificationSeed.map((n,i)=>{const unread=!state.readNotifications.has(String(i));return '<button class="notification '+(unread?"unread":"")+'" data-notification="'+i+'" style="width:100%;background:'+(unread?"rgba(98,230,255,.035)":"transparent")+';color:#fff;text-align:left;border-left:0;border-right:0;border-bottom:0"><div class="avatar">'+n.icon+'</div><div><p>'+esc(n.text)+'</p><small>'+n.time+'</small></div>'+(unread?'<i class="dot-unread"></i>':'')+'</button>'}).join("");
+ const filter=$("[data-notif-filter].active")?.dataset.notifFilter||"all";
+ $("#notificationList").innerHTML=notificationSeed.map((n,i)=>({n,i})).filter(x=>filter==="all"||x.n.cat===filter).map(({n,i})=>{const unread=!state.readNotifications.has(String(i));return '<button class="notification '+(unread?"unread":"")+'" data-notification="'+i+'" style="width:100%;background:'+(unread?"rgba(98,230,255,.035)":"transparent")+';color:#fff;text-align:left;border-left:0;border-right:0;border-bottom:0"><div class="avatar">'+n.icon+'</div><div><p>'+esc(n.text)+'</p><small>'+n.time+'</small></div>'+(unread?'<i class="dot-unread"></i>':'')+'</button>'}).join("");
  const unreadCount=notificationSeed.filter((_,i)=>!state.readNotifications.has(String(i))).length;
  $("#notifBadge").style.display=unreadCount?"":"none";$("#notifBadge").textContent=String(unreadCount);
  $$("[data-notification]").forEach(b=>b.onclick=()=>{const i=b.dataset.notification,n=notificationSeed[Number(i)];state.readNotifications.add(i);save();renderNotifications();if(n.target.startsWith("profile:"))renderProfile(n.target.split(":")[1]);else switchView(n.target)});
@@ -277,10 +280,12 @@ function openPrivacy(){
  $("#savePrivacy").onclick=()=>{state.privacy={dm:$("#privacyDm").value,mentions:$("#privacyMentions").value,activity:$("#privacyActivity").checked};save();closeModal();toast("Privatsphäre gespeichert")}
 }
 function openContentSettings(){
- openModal('<span class="eyebrow">CONTENT</span><h2>Ausgeblendete Accounts</h2><p style="font-size:10px;color:var(--muted)">Stumm: '+[...state.muted].map(x=>esc(creator(x).name)).join(", ")||"keine"+'</p><p style="font-size:10px;color:var(--muted)">Blockiert: '+[...state.blocked].map(x=>esc(creator(x).name)).join(", ")||"keine"+'</p><button class="secondary" id="clearFilters">Alle Stummschaltungen und Blocks aufheben</button>');
+ const muted=[...state.muted].map(x=>esc(creator(x).name)).join(", ")||"keine";
+ const blocked=[...state.blocked].map(x=>esc(creator(x).name)).join(", ")||"keine";
+ openModal('<span class="eyebrow">CONTENT</span><h2>Ausgeblendete Accounts</h2><p style="font-size:10px;color:var(--muted)">Stumm: '+muted+'</p><p style="font-size:10px;color:var(--muted)">Blockiert: '+blocked+'</p><button class="secondary" id="clearFilters">Alle Stummschaltungen und Blocks aufheben</button>');
  $("#clearFilters").onclick=()=>{state.muted.clear();state.blocked.clear();save();closeModal();renderFeed();renderSuggested();toast("Filter zurückgesetzt")}
 }
-function openSaved(){openModal('<span class="eyebrow">GESPEICHERT</span><h2>Gespeicherte Beiträge</h2><div>'+allPosts().filter(p=>state.saved.has(p.id)).map(postHtml).join("")||'<div class="explore-empty">Noch nichts gespeichert.</div>'+'</div>');bindPostActions()}
+function openSaved(){const saved=allPosts().filter(p=>state.saved.has(p.id)).map(postHtml).join("");openModal('<span class="eyebrow">GESPEICHERT</span><h2>Gespeicherte Beiträge</h2><div>'+(saved||'<div class="explore-empty">Noch nichts gespeichert.</div>')+'</div>');bindPostActions()}
 
 function openChallenge(){
  openModal('<span class="eyebrow">RAID-HERAUSFORDERUNG</span><h2>Creator herausfordern</h2><div class="modal-form"><label>Gegner<select id="challengeOpponent">'+baseCreators.map(c=>'<option value="'+c.id+'">'+esc(c.name)+' · '+esc(c.team)+'</option>').join("")+'</select></label><label>Dauer<select id="challengeDuration"><option>10 Minuten</option><option>5 Minuten</option><option>15 Minuten</option></select></label><label>Start<input id="challengeTime" type="datetime-local"></label><button class="primary" id="sendChallenge">HERAUSFORDERUNG SENDEN</button></div>');
@@ -394,6 +399,21 @@ function newMessage(){
  $("#dmCreate").onclick=()=>{const id=$("#dmRecipient").value,c=creator(id),txt=$("#dmStart").value.trim();if(!txt)return;const existing=getConversation(id)||{name:c.name,initial:c.initial,preview:"",messages:[]};existing.messages=[...(existing.messages||[]),["me",txt]];existing.preview=txt;saveConversation(id,existing);state.currentChat=id;save();closeModal();renderMessages();switchView("messages");toast("Nachricht gesendet")}
 }
 
+
+function openTrend(tag){
+ const related=allPosts().filter(p=>String(p.text).toLowerCase().includes(tag.toLowerCase())).map(postHtml).join("");
+ openModal('<span class="eyebrow">TREND</span><h2>'+esc(tag)+'</h2><p style="font-size:10px;color:var(--muted)">Aktuell diskutiert die Weltenclicker-Community über diesen Trend.</p><div>'+(related||'<div class="explore-empty">Im Demo-Feed gibt es hierzu gerade keine weiteren Beiträge.</div>')+'</div>');
+ bindPostActions();
+}
+function openRaidCalendar(){
+ openModal('<span class="eyebrow">RAID KALENDER</span><h2>Kommende Community Battles</h2><div style="display:grid;gap:8px"><div class="card" style="padding:12px"><strong>Heute · 20:00</strong><p style="font-size:10px">Moss Legion ⚔ Orbital Crew</p><button class="secondary" data-calendar-reminder="moss-orb">'+(state.reminders.has("moss-orb")?"✓ Erinnerung aktiv":"Erinnern")+'</button></div><div class="card" style="padding:12px"><strong>Morgen · 18:30</strong><p style="font-size:10px">Voidwalkers ⚔ Team Pixel</p><button class="secondary" data-calendar-reminder="void-pixel">'+(state.reminders.has("void-pixel")?"✓ Erinnerung aktiv":"Erinnern")+'</button></div></div>');
+ $("[data-calendar-reminder]").forEach(b=>b.onclick=()=>{toggleSet(state.reminders,b.dataset.calendarReminder);openRaidCalendar();renderRaid()});
+}
+function openModerationOverview(){
+ openModal('<span class="eyebrow">CREATOR SAFETY</span><h2>Moderation & Sicherheit</h2><div style="display:grid;gap:7px"><button class="secondary" data-open-mod="words">Wortfilter · '+state.wordFilter.length+'</button><button class="secondary" data-open-mod="mods">Moderatoren · '+state.moderators.length+'</button><button class="secondary" data-open-mod="reports">Offene Reports · '+state.reports.filter(r=>r.status==="offen").length+'</button><button class="secondary" data-open-mod="blocked">Geblockte Nutzer · '+state.blocked.size+'</button></div>');
+ $("[data-open-mod]").forEach(b=>b.onclick=()=>openModeration(b.dataset.openMod));
+}
+
 function updateStaticActions(){
  $("#prototypeClick").onclick=clickGame;
  $("#openComposer").onclick=openComposer;$("#inlineCompose").onclick=openComposer;$("#quickWorldPost").onclick=()=>{openComposer();setTimeout(()=>{$("#composeText").value="Gerade einen neuen Weltenclicker-Meilenstein erreicht! 🌍 #RoadTo1B";$("#composeText").dispatchEvent(new Event("input"))},30)};
@@ -404,7 +424,15 @@ function updateStaticActions(){
  $("#watchRaid").onclick=()=>{state.raidWatching=!state.raidWatching;save();renderRaid();toast(state.raidWatching?"Raid-Beobachtung aktiviert":"Raid-Beobachtung beendet")};
  $$("[data-raid-reminder]").forEach(b=>b.onclick=()=>{toggleSet(state.reminders,b.dataset.raidReminder);renderRaid();toast(state.reminders.has(b.dataset.raidReminder)?"Raid-Erinnerung gesetzt":"Erinnerung entfernt")});
  $("#accountMenu").onclick=e=>{e.stopPropagation();openAccountMenu()};$("#accountMini").onclick=e=>{if(e.target.id!=="accountMenu")renderProfile("you")};$("#accountMini").onkeydown=e=>{if(e.key==="Enter")renderProfile("you")};
- $("#newMessage").onclick=newMessage;$("#openMyCommunity").onclick=()=>openModal('<span class="eyebrow">DEINE COMMUNITY</span><h2>'+esc(state.communitySettings.name)+'</h2><p>'+esc(state.communitySettings.desc)+'</p><div class="community-stats"><span><b>28,4K</b> Mitglieder</span><span><b>3,92B</b> Welten</span><span><b>18–3</b> Raids</span></div><button class="primary" id="manageCommunity" style="margin-top:12px">IM CREATOR HUB VERWALTEN</button>');document.addEventListener("click",e=>{if(e.target?.id==="manageCommunity"){closeModal();switchView("creator")}});
+ $("#newMessage").onclick=newMessage;
+ $("#chatAttach").onclick=()=>toast("Anhänge sind im DM-Prototyp vorbereitet; Datei-Upload folgt mit dem echten Backend");
+ $("#creatorPublicProfile").onclick=()=>renderProfile("you");
+ $("#showAllCreators").onclick=()=>{$("[data-explore-filter]").forEach(x=>x.classList.toggle("active",x.dataset.exploreFilter==="creators"));renderExplore();switchView("explore")};
+ $("#raidCalendar").onclick=openRaidCalendar;
+ $("#allModeration").onclick=openModerationOverview;
+ $("#communitySort").onchange=renderCommunities;
+ $("[data-notif-filter]").forEach(b=>b.onclick=()=>{$("[data-notif-filter]").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderNotifications()});
+ $("[data-trend]").forEach(b=>b.onclick=()=>openTrend(b.dataset.trend));$("#openMyCommunity").onclick=()=>openModal('<span class="eyebrow">DEINE COMMUNITY</span><h2>'+esc(state.communitySettings.name)+'</h2><p>'+esc(state.communitySettings.desc)+'</p><div class="community-stats"><span><b>28,4K</b> Mitglieder</span><span><b>3,92B</b> Welten</span><span><b>18–3</b> Raids</span></div><button class="primary" id="manageCommunity" style="margin-top:12px">IM CREATOR HUB VERWALTEN</button>');document.addEventListener("click",e=>{if(e.target?.id==="manageCommunity"){closeModal();switchView("creator")}});
  $$("[data-tool]").forEach(b=>b.onclick=()=>openTool(b.dataset.tool));
  $$("[data-setting-toggle]").forEach(b=>b.onclick=()=>{const k=b.dataset.settingToggle;state.communitySettings[k]=!state.communitySettings[k];save();renderCreatorSettings()});
  $("#saveCreatorSettings").onclick=()=>{const name=$("#creatorNameSetting").value.trim(),code=$("#creatorCodeSetting").value.trim().toUpperCase(),desc=$("#creatorDescSetting").value.trim();if(name.length<3||!/^[A-Z0-9_]{3,20}$/.test(code)){toast("Name oder Code ungültig");return}state.communitySettings={...state.communitySettings,name,code,desc};save();renderAccount();renderCommunitySettingsElsewhere();toast("Community gespeichert")};

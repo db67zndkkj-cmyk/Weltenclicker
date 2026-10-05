@@ -81,7 +81,7 @@
           <button class="chip" data-explore-filter="raids">Raids</button>
         </div>
         <section class="section-block">
-          <div class="section-title"><h2>Creator, die gerade wachsen</h2><button>Alle ansehen</button></div>
+          <div class="section-title"><h2>Creator, die gerade wachsen</h2><button id="showAllCreators">Alle ansehen</button></div>
           <div id="creatorGrid" class="creator-grid"></div>
         </section>
         <section class="section-block">
@@ -91,10 +91,10 @@
         <section class="section-block">
           <div class="section-title"><h2>Trending</h2></div>
           <div class="trend-grid">
-            <button class="trend-card"><span>#1 · Gaming</span><strong>#WorldWar</strong><small>18,2K Beiträge</small></button>
-            <button class="trend-card"><span>#2 · Weltenclicker</span><strong>#TeamNova</strong><small>7,9K Beiträge</small></button>
-            <button class="trend-card"><span>#3 · Live</span><strong>#BossRush</strong><small>6,1K Beiträge</small></button>
-            <button class="trend-card"><span>#4 · Community</span><strong>#RoadTo1B</strong><small>4,4K Beiträge</small></button>
+            <button class="trend-card" data-trend="#WorldWar"><span>#1 · Gaming</span><strong>#WorldWar</strong><small>18,2K Beiträge</small></button>
+            <button class="trend-card" data-trend="#TeamNova"><span>#2 · Weltenclicker</span><strong>#TeamNova</strong><small>7,9K Beiträge</small></button>
+            <button class="trend-card" data-trend="#BossRush"><span>#3 · Live</span><strong>#BossRush</strong><small>6,1K Beiträge</small></button>
+            <button class="trend-card" data-trend="#RoadTo1B"><span>#4 · Community</span><strong>#RoadTo1B</strong><small>4,4K Beiträge</small></button>
           </div>
         </section>
       </section>
@@ -131,7 +131,7 @@
         </article>
 
         <section class="section-block">
-          <div class="section-title"><h2>Anstehende Raids</h2><button>Kalender</button></div>
+          <div class="section-title"><h2>Anstehende Raids</h2><button id="raidCalendar">Kalender</button></div>
           <div class="upcoming-raids">
             <article class="mini-raid card"><span>HEUTE · 20:00</span><strong>Moss Legion <b>VS</b> Orbital Crew</strong><small>8.240 Interessierte</small><button class="secondary reminder-btn" data-raid-reminder="moss-orb">Erinnern</button></article>
             <article class="mini-raid card"><span>MORGEN · 18:30</span><strong>Voidwalkers <b>VS</b> Team Pixel</strong><small>5.711 Interessierte</small><button class="secondary reminder-btn" data-raid-reminder="void-pixel">Erinnern</button></article>
@@ -165,7 +165,7 @@
           </div>
           <button class="secondary" id="openMyCommunity">Community öffnen</button>
         </article>
-        <div class="section-title"><h2>Alle Communities</h2><select><option>Nach Aktivität</option><option>Nach Welten</option><option>Nach Raid-Rang</option></select></div>
+        <div class="section-title"><h2>Alle Communities</h2><select id="communitySort"><option value="activity">Nach Aktivität</option><option value="worlds">Nach Welten</option><option value="raids">Nach Raid-Rang</option></select></div>
         <div id="communityList" class="community-list"></div>
       </section>
 
@@ -175,7 +175,7 @@
           <button id="markRead" class="text-btn">Alle als gelesen markieren</button>
         </div>
         <div class="activity-tabs">
-          <button class="chip active">Alle</button><button class="chip">@Mentions</button><button class="chip">Raids</button><button class="chip">Community</button>
+          <button class="chip active" data-notif-filter="all">Alle</button><button class="chip" data-notif-filter="mentions">@Mentions</button><button class="chip" data-notif-filter="raids">Raids</button><button class="chip" data-notif-filter="community">Community</button>
         </div>
         <div id="notificationList" class="notification-list"></div>
       </section>
@@ -187,7 +187,7 @@
           <section class="chat-panel">
             <header id="chatHeader"></header>
             <div id="chatMessages" class="chat-messages"></div>
-            <form id="chatForm" class="chat-input"><button type="button">＋</button><input id="chatText" placeholder="Nachricht schreiben …"><button type="submit" class="send-btn">➤</button></form>
+            <form id="chatForm" class="chat-input"><button id="chatAttach" type="button">＋</button><input id="chatText" placeholder="Nachricht schreiben …"><button type="submit" class="send-btn">➤</button></form>
           </section>
         </div>
       </section>
@@ -201,7 +201,7 @@
         <section class="creator-identity card">
           <div class="creator-avatar-lg">SL</div>
           <div><span class="verified-line">✓ TWITCH CREATOR</span><h2>SaschaWorlds</h2><p>Community Owner · #SASCHA · 6.842 Mitglieder</p></div>
-          <button class="secondary">Öffentliches Profil</button>
+          <button class="secondary" id="creatorPublicProfile">Öffentliches Profil</button>
         </section>
 
         <div class="metric-grid">
@@ -232,7 +232,7 @@
         </div>
 
         <section class="card dashboard-panel moderation-panel">
-          <div class="section-title"><h2>Moderation & Sicherheit</h2><button>Alle Einstellungen</button></div>
+          <div class="section-title"><h2>Moderation & Sicherheit</h2><button id="allModeration">Alle Einstellungen</button></div>
           <div class="mod-grid">
             <button data-mod="words"><strong>Wortfilter</strong><span id="wordFilterCount">4 Begriffe blockiert</span></button>
             <button data-mod="mods"><strong>Moderatoren</strong><span id="modCount">2 Team-Mitglieder</span></button>
@@ -270,9 +270,9 @@
 
       <section class="right-card card">
         <div class="section-title"><h3>Trends</h3></div>
-        <button class="side-trend"><span>1 · Weltenclicker</span><strong>#WorldWar</strong><small>18,2K Posts</small></button>
-        <button class="side-trend"><span>2 · Gaming</span><strong>#RoadTo1B</strong><small>4,4K Posts</small></button>
-        <button class="side-trend"><span>3 · Creator</span><strong>#BossRush</strong><small>6,1K Posts</small></button>
+        <button class="side-trend" data-trend="#WorldWar"><span>1 · Weltenclicker</span><strong>#WorldWar</strong><small>18,2K Posts</small></button>
+        <button class="side-trend" data-trend="#RoadTo1B"><span>2 · Gaming</span><strong>#RoadTo1B</strong><small>4,4K Posts</small></button>
+        <button class="side-trend" data-trend="#BossRush"><span>3 · Creator</span><strong>#BossRush</strong><small>6,1K Posts</small></button>
       </section>
 
       <footer class="right-footer"><a href="/agb.html">AGB</a><a href="/datenschutz.html">Datenschutz</a><a href="/impressum.html">Impressum</a><span>© Weltenclicker Prototype</span></footer>
