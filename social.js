@@ -151,9 +151,9 @@ async function fastPostToggle(kind,id){
 
 function bindPostActions(root=document){
   $$("[data-profile]",root).forEach(b=>b.onclick=()=>navigate("profile",{handle:b.dataset.profile}));
-  $("[data-like]",root).forEach(b=>b.onclick=()=>fastPostToggle("like",b.dataset.like));
-  $("[data-save]",root).forEach(b=>b.onclick=()=>fastPostToggle("save",b.dataset.save));
-  $("[data-repost]",root).forEach(b=>b.onclick=()=>fastPostToggle("repost",b.dataset.repost));
+  $$("[data-like]",root).forEach(b=>b.onclick=()=>fastPostToggle("like",b.dataset.like));
+  $$("[data-save]",root).forEach(b=>b.onclick=()=>fastPostToggle("save",b.dataset.save));
+  $$("[data-repost]",root).forEach(b=>b.onclick=()=>fastPostToggle("repost",b.dataset.repost));
   $$("[data-comments]",root).forEach(b=>b.onclick=()=>openComments(b.dataset.comments));
   $$("[data-post-menu]",root).forEach(b=>b.onclick=()=>openPostMenu(b.dataset.postMenu));
   $$("[data-share]",root).forEach(b=>b.onclick=async()=>{const url=location.origin+"/social.html#post="+b.dataset.share;try{await navigator.clipboard.writeText(url);toast("Post-Link kopiert")}catch{toast(url)}});
@@ -235,7 +235,7 @@ function renderSearchResults(){
   $("#profileResults").innerHTML=(state.search.profiles||[]).length?state.search.profiles.map(profileCard).join(""):empty("Keine Accounts gefunden","Probiere einen anderen Suchbegriff.");
   $("#communityResults").innerHTML=(state.search.communities||[]).length?state.search.communities.map(communityCard).join(""):empty("Keine Communities gefunden","Erstelle im Creator Hub die erste Community.");
   $$("[data-open-profile]").forEach(b=>b.onclick=()=>navigate("profile",{handle:b.dataset.openProfile}));
-  $("[data-follow]").forEach(b=>b.onclick=async()=>{
+  $$("[data-follow]").forEach(b=>b.onclick=async()=>{
     const handle=b.dataset.follow,p=(state.search.profiles||[]).find(x=>x.handle.toLowerCase()===handle.toLowerCase());
     const old=p?Boolean(p.following):b.classList.contains("active");
     if(p)p.following=!old;b.classList.toggle("active",!old);b.textContent=!old?"Folge ich":"Folgen";
