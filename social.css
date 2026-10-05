@@ -4,3 +4,6 @@ button{touch-action:manipulation}
 .post-action,.follow,.join,.tab,.nav-item,.global-click{transition:transform .08s ease,background-color .12s ease,color .12s ease,opacity .12s ease}
 .post-action:active,.follow:active,.join:active,.global-click:active{transform:scale(.94)}
 .post-action.active-like,.post-action.active-save,.post-action.active-repost{font-weight:900}
+
+.animation-link{color:#d8c9ff!important}.mobile-nav a{border:0;background:none;color:var(--muted);font-size:16px;padding:5px;text-decoration:none;text-align:center}.mobile-nav a span{display:block;font-size:7px;margin-top:2px}.mobile-nav a:hover{color:var(--cyan)}
+@media(max-width:680px){.mobile-nav{grid-template-columns:repeat(6,1fr)}}

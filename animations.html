@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Weltenclicker FanArt Animations – Kurzanimationen, Serien und personalisierte Empfehlungen">
+  <title>Weltenclicker Animations</title>
+  <link rel="preconnect" href="https://dadrajxjjzitwobmwvgy.supabase.co" crossorigin>
+  <link rel="stylesheet" href="/animations.css">
+</head>
+<body>
+  <a class="skip" href="#animationMain">Zum Inhalt springen</a>
+  <div class="topbar">FANART ANIMATIONS · SERIEN · PERSONALISIERTE EMPFEHLUNGEN</div>
+
+  <div class="shell">
+    <aside class="left">
+      <a class="brand" href="/"><span class="orb">◉</span><span>WELTEN<b>CLICKER</b></span></a>
+      <nav class="nav" aria-label="Animations Navigation">
+        <button data-view="for_you" class="active"><span>▶</span><b>Für dich</b></button>
+        <button data-view="following"><span>♡</span><b>Folge ich</b></button>
+        <button data-view="series"><span>▤</span><b>Serien</b></button>
+        <button data-view="continue"><span>↻</span><b>Weiter ansehen</b></button>
+        <button data-view="trending"><span>↗</span><b>Trending</b></button>
+        <button data-view="studio" class="studio-link"><span>✦</span><b>Creator Studio</b></button>
+        <button data-view="assistant"><span>◉</span><b>Orbix</b></button>
+        <a href="/social.html"><span>←</span><b>Social Hub</b></a>
+      </nav>
+      <div class="rules-mini">
+        <strong>Nur FanArt Animationen</strong>
+        <small>Uploads benötigen eine Rechtebestätigung.</small>
+      </div>
+      <button id="account" class="account"><span id="avatar" class="avatar">?</span><span><strong id="name">Lädt …</strong><small id="handle"></small></span></button>
+    </aside>
+
+    <main id="animationMain" class="main">
+      <header class="mobile-head">
+        <a class="brand compact" href="/"><span class="orb">◉</span><span>ANIMATIONS</span></a>
+        <button id="mobileStudio" class="icon">＋</button>
+      </header>
+      <div id="page" aria-live="polite"></div>
+    </main>
+
+    <aside class="right">
+      <section class="assistant-card panel">
+        <div class="assistant-head">
+          <span class="orb-small">◉</span>
+          <div><strong>Orbix</strong><small>READ-ONLY ASSISTENT</small></div>
+          <span class="lock">🔒</span>
+        </div>
+        <p id="assistantIntro">Ich kann dir Animationen und Serien empfehlen, erklären und beim Entdecken helfen. Ich kann nichts bearbeiten, löschen oder veröffentlichen.</p>
+        <div class="prompt-chips">
+          <button data-prompt="Was könnte mir gefallen?">Für mich</button>
+          <button data-prompt="Was kann ich weiterschauen?">Weiter</button>
+          <button data-prompt="Was ist gerade beliebt?">Trending</button>
+        </div>
+        <div id="assistantAnswer" class="assistant-answer"></div>
+        <form id="assistantForm" class="assistant-form">
+          <input id="assistantInput" maxlength="500" placeholder="Frag Orbix …">
+          <button>➤</button>
+        </form>
+        <button id="assistantRules" class="rules-button">Was darf Orbix?</button>
+      </section>
+
+      <section class="panel side-info">
+        <span class="eyebrow">DEIN FEED</span>
+        <div id="sideStats"><small>Empfehlungen werden aus Watchtime, Saves, Likes, Serien-Follows und Exploration gemischt.</small></div>
+      </section>
+
+      <footer><a href="/datenschutz.html">Datenschutz</a><a href="/agb.html">AGB</a><a href="/impressum.html">Impressum</a></footer>
+    </aside>
+  </div>
+
+  <nav class="mobile-nav">
+    <button data-view="for_you" class="active">▶<span>Für dich</span></button>
+    <button data-view="series">▤<span>Serien</span></button>
+    <button data-view="continue">↻<span>Weiter</span></button>
+    <button data-view="studio">✦<span>Studio</span></button>
+    <button data-view="assistant">◉<span>Orbix</span></button>
+  </nav>
+
+  <div id="modal" class="modal" hidden>
+    <div class="backdrop" data-close></div>
+    <section class="modal-card panel" role="dialog" aria-modal="true">
+      <button class="close" data-close>×</button>
+      <div id="modalBody"></div>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.0/dist/umd/supabase.min.js"></script>
+  <script src="/animations.js"></script>
+</body>
+</html>
