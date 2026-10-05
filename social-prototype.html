@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/social-prototype.css">
 </head>
 <body>
-  <div class="prototype-ribbon">INTERAKTIVER PROTOTYP · DEMODATEN · NOCH KEINE ECHTEN SOCIAL-FUNKTIONEN</div>
+  <div class="prototype-ribbon">INTERAKTIVER PROTOTYP · SOCIAL-DATEN LOKAL GESPEICHERT · WELTENZÄHLER LIVE</div>
 
   <div class="social-shell">
     <aside class="left-rail">
@@ -26,7 +26,7 @@
 
       <button id="openComposer" class="create-post">+ POST ERSTELLEN</button>
 
-      <div class="account-mini">
+      <div class="account-mini" id="accountMini" role="button" tabindex="0">
         <div class="avatar avatar-you">SL</div>
         <div><strong>Sascha</strong><span>@SaschaWorlds</span></div>
         <button id="accountMenu" aria-label="Account-Menü">•••</button>
@@ -106,12 +106,12 @@
         </div>
 
         <article class="raid-hero card">
-          <div class="raid-live-label">● LIVE RAID · 07:42 RESTZEIT</div>
+          <div class="raid-live-label"><span id="raidLiveText">● LIVE RAID · 07:42 RESTZEIT</span></div>
           <div class="raid-versus">
             <div class="raid-team">
               <div class="team-emblem purple">N</div>
               <strong>Team Nova</strong><span>12.847 Spieler</span>
-              <b>18.429.210</b>
+              <b id="raidScoreA">18.429.210</b>
             </div>
             <div class="raid-center">
               <span>⚔</span><strong>VS</strong><small>10 MIN RAID</small>
@@ -119,11 +119,11 @@
             <div class="raid-team">
               <div class="team-emblem red">A</div>
               <strong>Ashen Army</strong><span>10.291 Spieler</span>
-              <b>17.981.443</b>
+              <b id="raidScoreB">17.981.443</b>
             </div>
           </div>
-          <div class="battle-meter"><i style="width:50.6%"></i></div>
-          <div class="raid-delta">Team Nova führt mit <strong>447.767</strong> Welten</div>
+          <div class="battle-meter"><i id="raidMeter" style="width:50.6%"></i></div>
+          <div id="raidDelta" class="raid-delta">Team Nova führt mit <strong>447.767</strong> Welten</div>
           <div class="raid-actions">
             <button class="primary" id="joinRaid">FÜR TEAM NOVA KÄMPFEN</button>
             <button class="secondary" id="watchRaid">Raid verfolgen</button>
@@ -133,8 +133,8 @@
         <section class="section-block">
           <div class="section-title"><h2>Anstehende Raids</h2><button>Kalender</button></div>
           <div class="upcoming-raids">
-            <article class="mini-raid card"><span>HEUTE · 20:00</span><strong>Moss Legion <b>VS</b> Orbital Crew</strong><small>8.240 Interessierte</small><button class="secondary reminder-btn">Erinnern</button></article>
-            <article class="mini-raid card"><span>MORGEN · 18:30</span><strong>Voidwalkers <b>VS</b> Team Pixel</strong><small>5.711 Interessierte</small><button class="secondary reminder-btn">Erinnern</button></article>
+            <article class="mini-raid card"><span>HEUTE · 20:00</span><strong>Moss Legion <b>VS</b> Orbital Crew</strong><small>8.240 Interessierte</small><button class="secondary reminder-btn" data-raid-reminder="moss-orb">Erinnern</button></article>
+            <article class="mini-raid card"><span>MORGEN · 18:30</span><strong>Voidwalkers <b>VS</b> Team Pixel</strong><small>5.711 Interessierte</small><button class="secondary reminder-btn" data-raid-reminder="void-pixel">Erinnern</button></article>
           </div>
         </section>
 
@@ -163,7 +163,7 @@
             <p>Wir klicken bis der Kosmos aufgibt. 🌌 Live-Raids jeden Freitag.</p>
             <div class="community-stats"><span><b>28,4K</b> Mitglieder</span><span><b>3,92B</b> Welten</span><span><b>18–3</b> Raids</span></div>
           </div>
-          <button class="secondary">Community öffnen</button>
+          <button class="secondary" id="openMyCommunity">Community öffnen</button>
         </article>
         <div class="section-title"><h2>Alle Communities</h2><select><option>Nach Aktivität</option><option>Nach Welten</option><option>Nach Raid-Rang</option></select></div>
         <div id="communityList" class="community-list"></div>
@@ -181,7 +181,7 @@
       </section>
 
       <section id="view-messages" class="view messages-view">
-        <div class="view-head"><div><span class="eyebrow">DMs</span><h1>Nachrichten</h1></div><button class="icon-btn">＋</button></div>
+        <div class="view-head"><div><span class="eyebrow">DMs</span><h1>Nachrichten</h1></div><button class="icon-btn" id="newMessage">＋</button></div>
         <div class="messages-layout card">
           <aside id="conversationList" class="conversation-list"></aside>
           <section class="chat-panel">
@@ -195,7 +195,7 @@
       <section id="view-creator" class="view">
         <div class="view-head">
           <div><span class="eyebrow">CREATOR HUB</span><h1>Streamer Dashboard</h1></div>
-          <span class="status-pill">● Twitch verbunden</span>
+          <span class="status-pill">● DEMO · Twitch verknüpft</span>
         </div>
 
         <section class="creator-identity card">
@@ -214,30 +214,30 @@
         <div class="creator-columns">
           <section class="card dashboard-panel">
             <div class="section-title"><h2>Stream Tools</h2></div>
-            <button class="tool-row"><span>◫</span><div><strong>OBS Battle Overlay</strong><small>Live-Punktestand, Lead Changes, Countdown</small></div><em>›</em></button>
-            <button class="tool-row"><span>⚡</span><div><strong>Community-Ziel</strong><small>Fortschrittsbalken für deinen Stream</small></div><em>›</em></button>
-            <button class="tool-row"><span>☠</span><div><strong>Boss Event</strong><small>Gemeinsamer Boss für deine Zuschauer</small></div><em>›</em></button>
-            <button class="tool-row"><span>⚔</span><div><strong>Raid starten</strong><small>Anderen Creator herausfordern</small></div><em>›</em></button>
+            <button class="tool-row" data-tool="overlay"><span>◫</span><div><strong>OBS Battle Overlay</strong><small>Live-Punktestand, Lead Changes, Countdown</small></div><em>›</em></button>
+            <button class="tool-row" data-tool="goal"><span>⚡</span><div><strong>Community-Ziel</strong><small>Fortschrittsbalken für deinen Stream</small></div><em>›</em></button>
+            <button class="tool-row" data-tool="boss"><span>☠</span><div><strong>Boss Event</strong><small>Gemeinsamer Boss für deine Zuschauer</small></div><em>›</em></button>
+            <button class="tool-row" data-tool="raid"><span>⚔</span><div><strong>Raid starten</strong><small>Anderen Creator herausfordern</small></div><em>›</em></button>
           </section>
 
           <section class="card dashboard-panel">
             <div class="section-title"><h2>Community verwalten</h2></div>
-            <label>Community-Name<input value="Team Sascha"></label>
-            <label>Community-Code<input value="SASCHA"></label>
-            <label>Beschreibung<textarea>Gemeinsam bauen wir das größte Universum.</textarea></label>
-            <div class="toggle-row"><span>Beitritt automatisch erlauben</span><button class="toggle on"><i></i></button></div>
-            <div class="toggle-row"><span>Raid-Anfragen erlauben</span><button class="toggle on"><i></i></button></div>
-            <button class="primary">Änderungen speichern</button>
+            <label>Community-Name<input id="creatorNameSetting" value="Team Sascha"></label>
+            <label>Community-Code<input id="creatorCodeSetting" value="SASCHA"></label>
+            <label>Beschreibung<textarea id="creatorDescSetting">Gemeinsam bauen wir das größte Universum.</textarea></label>
+            <div class="toggle-row"><span>Beitritt automatisch erlauben</span><button class="toggle on" data-setting-toggle="autoJoin"><i></i></button></div>
+            <div class="toggle-row"><span>Raid-Anfragen erlauben</span><button class="toggle on" data-setting-toggle="raidRequests"><i></i></button></div>
+            <button class="primary" id="saveCreatorSettings">Änderungen speichern</button>
           </section>
         </div>
 
         <section class="card dashboard-panel moderation-panel">
           <div class="section-title"><h2>Moderation & Sicherheit</h2><button>Alle Einstellungen</button></div>
           <div class="mod-grid">
-            <button><strong>Wortfilter</strong><span>14 Begriffe blockiert</span></button>
-            <button><strong>Moderatoren</strong><span>5 Team-Mitglieder</span></button>
-            <button><strong>Reports</strong><span>3 offen</span></button>
-            <button><strong>Geblockte Nutzer</strong><span>12 Accounts</span></button>
+            <button data-mod="words"><strong>Wortfilter</strong><span id="wordFilterCount">4 Begriffe blockiert</span></button>
+            <button data-mod="mods"><strong>Moderatoren</strong><span id="modCount">2 Team-Mitglieder</span></button>
+            <button data-mod="reports"><strong>Reports</strong><span id="reportCount">1 offen</span></button>
+            <button data-mod="blocked"><strong>Geblockte Nutzer</strong><span id="blockedCount">0 Accounts</span></button>
           </div>
         </section>
       </section>
@@ -250,8 +250,8 @@
     <aside class="right-rail">
       <div class="global-widget card">
         <div><span>GLOBALE WELTEN</span><b>🌐 LIVE</b></div>
-        <strong id="prototypeWorlds">842.193.447</strong>
-        <button id="prototypeClick">+1 WELT</button>
+        <strong id="prototypeWorlds">Lädt …</strong>
+        <button id="prototypeClick">+1 WELT</button><small id="prototypeGameStatus" class="game-status">Live-Verbindung wird hergestellt …</small>
       </div>
 
       <div class="side-search"><span>⌕</span><input id="globalSearch" placeholder="Weltenclicker durchsuchen"></div>
@@ -296,6 +296,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="/social-prototype.js"></script>
+  <script src="/config.js"></script><script src="/social-prototype.js"></script>
 </body>
 </html>
